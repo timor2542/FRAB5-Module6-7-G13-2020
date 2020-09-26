@@ -1,8 +1,10 @@
 /*
- * Program  :   Test PWM Motor Control
- * Description  :   
- * 
- * 
+ * Program      :   Test PWM Motor Control
+ * Description  :   Generate PWM signal drive DC motor by IC L298N
+ * Frequency    :   7.378 MHz at PLL
+ * Filename     :   TestMCPWM.c
+ * C Compiler   :   XC16 Complier by Microship Technology
+ * Author       :   Mr.Krittamet Thawong and Mr.Wisarut Kasemphumirat KMUTT FIBO FRAB#5
  */
 #include "xc.h"
 #include <stdio.h>
@@ -53,7 +55,15 @@ void initPLL() // Set Fcy to 40 MHz
     while (OSCCONbits.COSC != 0b001); // Wait for Clock switch to occur
     while (OSCCONbits.LOCK!=1) {};    // Wait for PLL to lock
 }
-
+void initADC()
+{
+     /* ADC Reading */
+    AD1CON1bits.AD12B = 0;
+    AD1CON3bits.ADCS = 2;
+    AD1CON1bits.ADON = 1;
+    int i;
+    for(i = 0; i < 800; i++); // wait ADC module stabilize 20us
+}
 int adc_value(int channel){
     AD1CHS0 = channel;
     AD1CON1bits.SAMP = 1; // Start sampling
@@ -63,7 +73,6 @@ int adc_value(int channel){
     while(!AD1CON1bits.DONE); // Conversion done?
     AD1CON1bits.DONE = 0; // Clear conversion done status bit
     return ADC1BUF0;
-    
 }
 void run_motor(char ch, char dir, char pow)
 {
@@ -77,6 +86,8 @@ void run_motor(char ch, char dir, char pow)
             LATBbits.LATB0 = 0;
             LATBbits.LATB1 = 1;
         }
+            //update duty cycle 
+    P1DC1 = (2UL*P1TPER+2)*pow/100;  
     }
     else if(ch == 2)
     {
@@ -92,16 +103,19 @@ void run_motor(char ch, char dir, char pow)
     else if(ch == 12)
     {
         if(dir == 'F'){
+            LATBbits.LATB0 = 1;
+            LATBbits.LATB1 = 0;
             LATBbits.LATB2 = 1;
             LATBbits.LATB3 = 0;
         }
         else if(dir == 'B'){
+            LATBbits.LATB0 = 0;
+            LATBbits.LATB1 = 1;
             LATBbits.LATB2 = 0;
             LATBbits.LATB3 = 1;
         }
     }
-    //update duty cycle 
-    P1DC1 = (2UL*P1TPER+2)*pow/100;  
+
 }
 void stop_motor(char channel){
     switch(channel)
@@ -148,6 +162,7 @@ int main(void) {
     __builtin_disable_interrupts();
     initPLL();
     initPWM();
+    initADC();
     /*enable global interrupt*/
     __builtin_enable_interrupts();
     
