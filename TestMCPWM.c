@@ -30,9 +30,9 @@ void delay(unsigned int ms) // Keep counter for loop
 }
 
 void __setIO(int __byte1,int __byte2,int __byte3){
-    AD1PCFGL = __byte1; // Set all port is digital.
-    TRISA = __byte2; // Set all port A is input.
-    TRISB = __byte3; // Set all port B is output.
+    AD1PCFGL = __byte1;
+    TRISA = __byte2;
+    TRISB = __byte3;
 }
 void initPWM()
 {
