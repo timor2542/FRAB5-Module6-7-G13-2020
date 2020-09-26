@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 #define GLOBAL_INT_DISABLE __builtin_disable_interrupts()
-#define GLOBAL_INT_ENABLE __builtin_disable_interrupts()
+#define GLOBAL_INT_ENABLE __builtin_enable_interrupts()
 
 #define FCY 40000000UL
 #define MOTOR_PWM_FREQ 500        //motor PWM frequency in Hz
