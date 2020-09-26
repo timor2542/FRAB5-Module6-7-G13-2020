@@ -8,6 +8,7 @@
  */
 #include "xc.h"
 #include <stdio.h>
+#include "configuration.h"
 
 #define GLOBAL_INT_DISABLE __builtin_disable_interrupts()
 #define GLOBAL_INT_ENABLE __builtin_enable_interrupts()
