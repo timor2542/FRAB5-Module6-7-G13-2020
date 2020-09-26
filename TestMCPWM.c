@@ -1,5 +1,16 @@
+/*
+ * Program  :   Test PWM Motor Control
+ * Description  :   
+ * 
+ * 
+ */
 #include "xc.h"
 #include <stdio.h>
+
+_FOSCSEL(FNOSC_FRC);
+_FOSC(FCKSM_CSECMD & OSCIOFNC_OFF);
+
+#define FCY 40000000
 
 void initPWM()
 {
@@ -28,17 +39,6 @@ void initPWM()
 
     PTCONbits.PTEN = 1; // Enable PWM Timerbase!
 }
-int adc_value(int channel){
-    AD1CHS0 = channel;
-    AD1CON1bits.SAMP = 1; // Start sampling
-    int i;
-    for(i = 0; i < 15; i++); // Wait 5 * TAD
-    AD1CON1bits.SAMP = 0; // Start converting
-    while(!AD1CON1bits.DONE); // Conversion done?
-    AD1CON1bits.DONE = 0; // Clear conversion done status bit
-    return ADC1BUF0;
-    
-}
 
 void initPLL() // Set Fcy to 10 MHz
 {
@@ -56,6 +56,68 @@ void initPLL() // Set Fcy to 10 MHz
     while (OSCCONbits.LOCK!=1) {};    // Wait for PLL to lock
 }
 
+int adc_value(int channel){
+    AD1CHS0 = channel;
+    AD1CON1bits.SAMP = 1; // Start sampling
+    int i;
+    for(i = 0; i < 15; i++); // Wait 5 * TAD
+    AD1CON1bits.SAMP = 0; // Start converting
+    while(!AD1CON1bits.DONE); // Conversion done?
+    AD1CON1bits.DONE = 0; // Clear conversion done status bit
+    return ADC1BUF0;
+    
+}
+void run_motor(char ch, char dir, char pow)
+{
+    if(ch == 1)
+    {
+        if(dir == 'F'){
+            LATBbits.LATB0 = 0;
+            LATBbits.LATB1 = 0;
+        }
+        else if(dir == 'B'){
+            LATBbits.LATB0 = 0;
+            LATBbits.LATB1 = 0;
+        }
+    }
+    else if(ch == 2)
+    {
+        
+    }
+}
+void stop_motor(char channel){
+    switch(channel)
+    {
+        case 1:
+        {
+            LATBbits.LATB0 = 0;
+            LATBbits.LATB1 = 0;
+            break;
+        }
+        case 2:
+        {
+            LATBbits.LATB2 = 0;
+            LATBbits.LATB3 = 0;
+            break;
+        }
+        case 12:
+        {
+            LATBbits.LATB0 = 0;
+            LATBbits.LATB1 = 0;
+            LATBbits.LATB2 = 0;
+            LATBbits.LATB3 = 0;
+            break;
+        }
+        default:
+        {
+            LATBbits.LATB0 = 0;
+            LATBbits.LATB1 = 0;
+            LATBbits.LATB2 = 0;
+            LATBbits.LATB3 = 0;
+            break;
+        } 
+    }
+}
 
 int main(void) {
     
@@ -67,48 +129,6 @@ int main(void) {
     /*disable global interrupt*/
     __builtin_disable_interrupts();
     initPLL();
-    
-    /* Timer 2 is Analog Reading Time */
-    T2CONbits.TCKPS = 0b11; // Set prescaler 1:256
-    PR2 = 7813; // Set period at 200ms
-
-    /* Timer 3 is LED toggle Time */
-    T3CONbits.TCKPS = 0b11; // Set prescaler 1:256
-    PR3 = 39063; // Set period at 1000ms
-    OC2RS = 19532; // Set period at 500ms
-    OC2CONbits.OCM = 0b000; // Disable Output Compare Module
-    OC2CONbits.OCTSEL = 1;  // OC2 use timer3 as counter source
-    OC2CONbits.OCM = 0b110; //set to PWM without fault pin mode
-    
-    __builtin_write_OSCCONL(OSCCON & 0xBF); //PPS RECONFIG UNLOCK 
-    _RP1R = 0b10011;                 //remap RP2 connect to OC2
-    __builtin_write_OSCCONL(OSCCON | 0x40); //PPS RECONFIG LOCK
-    
-    /* ADC Reading */
-    
-    AD1CON1bits.AD12B = 0;
-    AD1CON3bits.ADCS = 2;
-    AD1CON1bits.ADON = 1;
-    int i;
-    for(i = 0; i < 800; i++); // wait ADC module stabilize 20us
-    
-    /*enable global interrupt*/
-    __builtin_enable_interrupts();
-    
-    /* Turn on Timer2&3 */
-    T2CONbits.TON = 1;
-    T3CONbits.TON = 1;
-    
-    /* Notice __dataADC */
-    int __dataADC = 0;
-    while(1)
-    {
-        if(TMR2 > 7500) // Spare time of 200ms
-        {
-            __dataADC = adc_value(2);
-        }
-        printf("TMR2= %5u, TMR3= %5u, AN2= %5d, RB1= %1d\n", TMR2, TMR3, __dataADC, _RB1);
-    }
-    
+    while(1);
     return 0;
 }
