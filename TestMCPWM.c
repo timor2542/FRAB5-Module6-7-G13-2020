@@ -9,30 +9,42 @@
 #include "xc.h"
 #include <stdio.h>
 
+#define FCY 40000000UL
 #define MOTOR_PWM_FREQ 500        //motor PWM frequency in Hz
-#define FCY 40000000UL            
 #define MOTOR_DUTY 70           //motor duty in %
+
+/*void __attribute__((interrupt, no_auto_psv)) _PWM1Interrupt(void){
+    IFS3bits.PWM1IF = 0;
+}*/
+
+void delay(unsigned int ms) // Keep counter for loop
+{
+    unsigned int x,a;
+    for(x=0;x<ms;x++)
+    {
+        for(a=0;a<816;a++); // Loop for delay 1 millisecond per unit
+    }
+}
 
 void initPWM()
 {
-         //setup PWM ports
-     P1TCONbits.PTEN = 0; 
-     
-     PWM1CON1 = 0;                //clear all bits (use defaults)
-     PWM1CON1bits.PMOD1 = 0;     //PWM1Ly,PWM1Hy are in independent running mode
-     PWM1CON1bits.PEN1L = 0;     //PWM1L1 NORMAL I/O
-     PWM1CON1bits.PEN1H = 1;     //PWM1H1 PWM OUTPUT
-     PWM1CON1bits.PEN2L = 0;     //PWM1L1 NORMAL I/O
-     PWM1CON1bits.PEN2H = 1;     //PWM1H2 PWM OUTPUT
+     //setup PWM ports
+    
+     PWM1CON1 = 0;                  //  Clear all bits (use defaults)
+     PWM1CON1bits.PMOD1 = 0;        //  PWM1Ly,PWM1Hy are in independent running mode
+     PWM1CON1bits.PEN1L = 0;        //  PWM1L1 NORMAL I/O
+     PWM1CON1bits.PEN1H = 1;        //  PWM1H1 PWM OUTPUT
+     PWM1CON1bits.PEN2L = 0;        //  PWM1L1 NORMAL I/O
+     PWM1CON1bits.PEN2H = 1;        //  PWM1H2 PWM OUTPUT
      
  
      //PWM mode and prescaler
      //PWM1, MOTORS 0,1,2    
-     P1TCON = 0;                    //clear all bits (use defaults)
-     P1TCONbits.PTMOD = 0b00;    //Free-runing mode 
-     P1TCONbits.PTCKPS = 0b11;    // 1:64 prescaler
+     P1TCON = 0;                    //  Clear all bits (use defaults)
+     P1TCONbits.PTMOD = 0b00;       //  Free-runing mode 
+     P1TCONbits.PTCKPS = 0b11;      //  1:64 prescaler
  
-     //setup desired frequency by setting period for 1:64 prescaler
+     //Setup desired frequency by setting period for 1:64 prescaler
      P1TPER = (FCY  / 64 / MOTOR_PWM_FREQ) - 1;    
 
      //ENABLE PWM1
@@ -99,6 +111,7 @@ void run_motor(char ch, char dir, char pow)
             LATBbits.LATB2 = 0;
             LATBbits.LATB3 = 1;
         }
+    P1DC2 = (2UL*P1TPER+2)*pow/100;
     }
     else if(ch == 12)
     {
@@ -114,6 +127,8 @@ void run_motor(char ch, char dir, char pow)
             LATBbits.LATB2 = 0;
             LATBbits.LATB3 = 1;
         }
+     P1DC1 = (2UL*P1TPER+2)*pow/100;
+     P1DC2 = (2UL*P1TPER+2)*pow/100;
     }
 
 }
@@ -156,7 +171,7 @@ int main(void) {
     /* Set Port */
     AD1PCFGL |= 0xFFFF; // Set all port is digital.
     TRISA |= 0x001F; // Set all port A is input.
-    TRISB &= 0xFFFD; // Set RB1 is output, other of port B is input.
+    TRISB &= 0x0000; // Set all port B is output.
     
     /*disable global interrupt*/
     __builtin_disable_interrupts();
@@ -168,7 +183,18 @@ int main(void) {
     
     while(1)
     {
-        run_motor(1,'F',MOTOR_DUTY);
+        run_motor(1,'F',MOTOR_DUTY);delay(2000);
+        stop_motor(1);delay(2000);
+        run_motor(1,'B',MOTOR_DUTY);delay(2000);
+        stop_motor(1);delay(2000);
+        run_motor(2,'F',MOTOR_DUTY);delay(2000);
+        stop_motor(2);delay(2000);
+        run_motor(2,'B',MOTOR_DUTY);delay(2000);
+        stop_motor(2);delay(2000);
+        run_motor(12,'F',MOTOR_DUTY);delay(2000);
+        stop_motor(12);delay(2000);
+        run_motor(12,'B',MOTOR_DUTY);delay(2000);
+        stop_motor(12);delay(2000);
     }
     
     return 0;
