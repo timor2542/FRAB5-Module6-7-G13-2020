@@ -32,10 +32,7 @@ void initPWM()
  
      //setup desired frequency by setting period for 1:64 prescaler
      P1TPER = (FCY  / 64 / MOTOR_PWM_FREQ) - 1;    
- 
-     //update duty cycle 
-     P1DC1 = (2UL*P1TPER+2)*MOTOR_DUTY/100;  
-     
+
      //ENABLE PWM1
      P1TMR = 0;
      P1TCONbits.PTEN = 1; 
@@ -73,18 +70,38 @@ void run_motor(char ch, char dir, char pow)
     if(ch == 1)
     {
         if(dir == 'F'){
-            LATBbits.LATB0 = 0;
+            LATBbits.LATB0 = 1;
             LATBbits.LATB1 = 0;
         }
         else if(dir == 'B'){
             LATBbits.LATB0 = 0;
-            LATBbits.LATB1 = 0;
+            LATBbits.LATB1 = 1;
         }
     }
     else if(ch == 2)
     {
-        
+        if(dir == 'F'){
+            LATBbits.LATB2 = 1;
+            LATBbits.LATB3 = 0;
+        }
+        else if(dir == 'B'){
+            LATBbits.LATB2 = 0;
+            LATBbits.LATB3 = 1;
+        }
     }
+    else if(ch == 12)
+    {
+        if(dir == 'F'){
+            LATBbits.LATB2 = 1;
+            LATBbits.LATB3 = 0;
+        }
+        else if(dir == 'B'){
+            LATBbits.LATB2 = 0;
+            LATBbits.LATB3 = 1;
+        }
+    }
+    //update duty cycle 
+    P1DC1 = (2UL*P1TPER+2)*pow/100;  
 }
 void stop_motor(char channel){
     switch(channel)
@@ -130,6 +147,14 @@ int main(void) {
     /*disable global interrupt*/
     __builtin_disable_interrupts();
     initPLL();
-    while(1);
+    initPWM();
+    /*enable global interrupt*/
+    __builtin_enable_interrupts();
+    
+    while(1)
+    {
+        run_motor(1,'F',MOTOR_DUTY);
+    }
+    
     return 0;
 }
