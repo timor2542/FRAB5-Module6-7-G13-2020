@@ -39,11 +39,17 @@ void initPWM()
      //setup PWM ports
     
      PWM1CON1 = 0;                  //  Clear all bits (use defaults)
-     PWM1CON1bits.PMOD1 = 0;        //  PWM1Ly,PWM1Hy are in independent running mode
+     
+     PWM1CON1bits.PMOD1 = 1;        //  PWM1L1,PWM1H1 are in independent running mode
+     PWM1CON1bits.PMOD2 = 1;        //  PWM1L2,PWM1H2 are in independent running mode
+     PWM1CON1bits.PMOD3 = 1;        //  PWM1L3,PWM1H3 are in independent running mode
+     
      PWM1CON1bits.PEN1L = 0;        //  PWM1L1 NORMAL I/O
      PWM1CON1bits.PEN1H = 1;        //  PWM1H1 PWM OUTPUT
-     PWM1CON1bits.PEN2L = 0;        //  PWM1L1 NORMAL I/O
+     PWM1CON1bits.PEN2L = 0;        //  PWM1L2 NORMAL I/O
      PWM1CON1bits.PEN2H = 1;        //  PWM1H2 PWM OUTPUT
+     PWM1CON1bits.PEN3L = 0;        //  PWM1L3 NORMAL I/O
+     PWM1CON1bits.PEN3H = 1;        //  PWM1H3 PWM OUTPUT
      
  
      //PWM mode and prescaler
