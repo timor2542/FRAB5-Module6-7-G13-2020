@@ -9,6 +9,9 @@
 #include "xc.h"
 #include <stdio.h>
 
+#define GLOBAL_INT_DISABLE __builtin_disable_interrupts()
+#define GLOBAL_INT_ENABLE __builtin_disable_interrupts()
+
 #define FCY 40000000UL
 #define MOTOR_PWM_FREQ 500        //motor PWM frequency in Hz
 #define MOTOR_DUTY 70           //motor duty in %
@@ -26,6 +29,11 @@ void delay(unsigned int ms) // Keep counter for loop
     }
 }
 
+void __setIO(int __byte1,int __byte2,int __byte3){
+    AD1PCFGL = __byte1; // Set all port is digital.
+    TRISA = __byte2; // Set all port A is input.
+    TRISB = __byte3; // Set all port B is output.
+}
 void initPWM()
 {
      //setup PWM ports
@@ -169,17 +177,14 @@ void stop_motor(char channel){
 int main(void) {
     
     /* Set Port */
-    AD1PCFGL |= 0xFFFF; // Set all port is digital.
-    TRISA |= 0x001F; // Set all port A is input.
-    TRISB &= 0x0000; // Set all port B is output.
-    
+    __setIO(0xFFFF, 0x001F, 0x0000);
     /*disable global interrupt*/
-    __builtin_disable_interrupts();
+    GLOBAL_INT_DISABLE;
     initPLL();
     initPWM();
     initADC();
     /*enable global interrupt*/
-    __builtin_enable_interrupts();
+    GLOBAL_INT_ENABLE;
     
     while(1)
     {
