@@ -7,44 +7,45 @@
 #include "xc.h"
 #include <stdio.h>
 
-_FOSCSEL(FNOSC_FRC);
-_FOSC(FCKSM_CSECMD & OSCIOFNC_OFF);
-
-#define FCY 40000000
+#define MOTOR_PWM_FREQ 500        //motor PWM frequency in Hz
+#define FCY 40000000UL            
+#define MOTOR_DUTY 70           //motor duty in %
 
 void initPWM()
 {
-    TRISBbits.TRISB12=0;
-    TRISBbits.TRISB14=0;
-    // RB14 and Rb12
-    PORTB = 0x00; // clear the outputs 
+         //setup PWM ports
+     P1TCONbits.PTEN = 0; 
+     
+     PWM1CON1 = 0;                //clear all bits (use defaults)
+     PWM1CON1bits.PMOD1 = 0;     //PWM1Ly,PWM1Hy are in independent running mode
+     PWM1CON1bits.PEN1L = 0;     //PWM1L1 NORMAL I/O
+     PWM1CON1bits.PEN1H = 1;     //PWM1H1 PWM OUTPUT
+     PWM1CON1bits.PEN2L = 0;     //PWM1L1 NORMAL I/O
+     PWM1CON1bits.PEN2H = 1;     //PWM1H2 PWM OUTPUT
+     
  
-    PTCONbits.PTOPS = 1; // PWM timer post-scale
-    PTCONbits.PTCKPS = 0; // PWM timer pre-scale
-    PTCONbits.PTMOD = 2; // PWM operates in Up-down Mode continuously 
-    //--> interupt each time wwe get to zero 
-    PTMR = 0; // PWM counter value, start at 0
-    PTPER = 799; // PWM Timebase period
-    
-    PWMCON1bits.PMOD2 = 0; // PWM in complimentary mode
-    PWMCON1bits.PMOD1 = 0; // PWM in complimentary mode
-    PWMCON1bits.PEN2H = 1; // PWM High pin is enabled
-    PWMCON1bits.PEN1H = 1; // PWM High pin is enabled
-	
-    DTCON1bits.DTAPS = 0;  //DeadTime pre-scaler = Tcy
-    DTCON1bits.DTA = 0;   //DeadTime value for 4 us. 
-
-    PDC1 = p1; // PWM#1 Duty Cycle register (11-bit)
-    PDC2 = p2; // PWM#2 Duty Cycle register (11-bit)
-
-    PTCONbits.PTEN = 1; // Enable PWM Timerbase!
+     //PWM mode and prescaler
+     //PWM1, MOTORS 0,1,2    
+     P1TCON = 0;                    //clear all bits (use defaults)
+     P1TCONbits.PTMOD = 0b00;    //Free-runing mode 
+     P1TCONbits.PTCKPS = 0b11;    // 1:64 prescaler
+ 
+     //setup desired frequency by setting period for 1:64 prescaler
+     P1TPER = (FCY  / 64 / MOTOR_PWM_FREQ) - 1;    
+ 
+     //update duty cycle 
+     P1DC1 = (2UL*P1TPER+2)*MOTOR_DUTY/100;  
+     
+     //ENABLE PWM1
+     P1TMR = 0;
+     P1TCONbits.PTEN = 1; 
 }
 
-void initPLL() // Set Fcy to 10 MHz
+void initPLL() // Set Fcy to 40 MHz
 {
-    PLLFBD = 96;           // M  = 98
-    CLKDIVbits.PLLPRE = 7;  // N1 = 9
-    CLKDIVbits.PLLPOST = 2; // N2 = 4
+    PLLFBD = 150;           // M  = 152
+    CLKDIVbits.PLLPRE = 5;  // N1 = 7
+    CLKDIVbits.PLLPOST = 0; // N2 = 2
     OSCTUN = 0;             // Tune FRC oscillator, if FRC is used
     
     // Clock switching to incorporate PLL
