@@ -42,13 +42,13 @@
 #define TIMER2_ON(x) T2CONbits.TON = x                          // Enable Timer2
 
 // Timer45 Configuration Zone
-#define TIMER4_PRESCALE(x) T1CONbits.TCKPS = x                  // Set Timer2 Prescaler
-#define TIMER45_COMBINE(x) T2CONbits.T32 = x                    // Enable Combine Timer23
-#define TIMER5HB_PERIOD(x) PR3 = x                              // Set Timer3 Period
-#define TIMER4LB_PERIOD(x) PR2 = x                              // Set Timer2 Period
-#define TIMER5_INT_ENABLE(x) _T1IE = x                          // Enable Interrupt Timer1
-#define TIMER5_INT_PRIORITY(x) _T1IP = x                        // Set Priority of Interrupt Timer1
-#define TIMER3_ON(x) T1CONbits.TON = x                          // Enable Timer2
+#define TIMER4_PRESCALE(x) T4CONbits.TCKPS = x                  // Set Timer2 Prescaler
+#define TIMER45_COMBINE(x) T5CONbits.T32 = x                    // Enable Combine Timer23
+#define TIMER5HB_PERIOD(x) PR5 = x                              // Set Timer3 Period
+#define TIMER4LB_PERIOD(x) PR4 = x                              // Set Timer2 Period
+#define TIMER5_INT_ENABLE(x) _T4IE = x                          // Enable Interrupt Timer1
+#define TIMER5_INT_PRIORITY(x) _T4IP = x                        // Set Priority of Interrupt Timer1
+#define TIMER4_ON(x) T4CONbits.TON = x                          // Enable Timer2
 
 // Frequency Configuration Zone
 #define FCY 40000000UL
