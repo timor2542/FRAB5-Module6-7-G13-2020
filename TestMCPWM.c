@@ -141,7 +141,10 @@ void initPWM()
 }
 void __updateFPWM(unsigned int __MOTOR_PWM_FREQ)
 {
+    P1TCONbits.PTEN = 0;
     P1TPER = (FCY  / 64 / __MOTOR_PWM_FREQ) - 1;
+    P1TMR = 0;
+    P1TCONbits.PTEN = 1;
 }
 void initPLL() // Set Fcy to 40 MHz
 {
@@ -330,7 +333,7 @@ int main(void) {
     
     /* Enable Global Interrupt */
     GLOBAL_INT_ENABLE;
-    __updateFPWM(500);              // Frequency PWM 500 Hz
+    __updateFPWM(500);              // Update Frequency PWM 500 Hz
     double ADC0;
     char __motor_duty;
     while(1)
