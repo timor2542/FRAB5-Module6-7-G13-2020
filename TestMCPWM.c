@@ -4,7 +4,7 @@
  * Frequency    :   7.378 MHz at PLL
  * Filename     :   TestMCPWM.c
  * C Compiler   :   XC16 Complier by Microship Technology
- * Author       :   Mr.Krittamet Thawong and Mr.Wisarut Kasemphumirat KMUTT FIBO FRAB#5
+ * Author       :   Mr.Krittamet Thawong and Mr.Wisaruth Kasemphumirat KMUTT FIBO FRAB#5
  * Update       :   30 September 2020 11:27 PM UTC+7 Bangkok
  * Test Port
  */
@@ -61,7 +61,7 @@
 #define FORWARD 0x01
 #define BACKWARD 0x02
 
-char __dir, __STOPM1status = 0;                                 //
+char __dir, __STOPMotor = 0;                                 //
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void){
     __dir ^= 0x01;
@@ -74,11 +74,11 @@ void __attribute__((interrupt, no_auto_psv)) _T5Interrupt(void){
     _T5IF = 0;
 }
 void __attribute__((interrupt, no_auto_psv)) _INT0Interrupt(void){
-    __STOPM1status = 1;
+    __STOPMotor = 1;
     _INT0IF = 0;
 }
 void __attribute__((interrupt, no_auto_psv)) _INT1Interrupt(void){
-    __STOPM1status = 0;
+    __STOPMotor = 0;
     _INT1IF = 0;
 }
 void __attribute__((interrupt, no_auto_psv)) _INT2Interrupt(void){
@@ -139,7 +139,10 @@ void initPWM()
      P1TMR = 0;
      P1TCONbits.PTEN = 1; 
 }
-
+void __updateFPWM(unsigned int __MOTOR_PWM_FREQ)
+{
+    P1TPER = (FCY  / 64 / __MOTOR_PWM_FREQ) - 1;
+}
 void initPLL() // Set Fcy to 40 MHz
 {
     PLLFBD = 150;           // M  = 152
@@ -327,22 +330,22 @@ int main(void) {
     
     /* Enable Global Interrupt */
     GLOBAL_INT_ENABLE;
-    
+    __updateFPWM(500);              // Frequency PWM 500 Hz
     double ADC0;
     char __motor_duty;
     while(1)
     {
         ADC0 = adc_value(0);                            // Reading ADC Channel 0
         __motor_duty = (ADC0/1023.0)*100;               // DAC to Duty Cycle Calculation
-        if(__STOPM1status)                              // If __STOPM1status = 1
+        if(__STOPMotor)                              // If __STOPM1status = 1
         {
             stop_motor(ALL3);                           // Stop 3 Motor
-            printf("All Motor has been stopped\n");
+            //printf("All Motor has been stopped\n");
         }
         else
         {
-            run_motor(0x01, __dir, __motor_duty);       // Run Motor1
-            printf("M1DIR: %1d, ADC0: %4.2f, SPD: %3d, TP1: %6d, TP1ON: %6d\n", __dir, ADC0, __motor_duty, P1TPER, P1DC1/2);
+            run_motor(0x66, __dir, __motor_duty);       // Run Motor1,2
+            //printf("M1DIR: %1d, ADC0: %4.2f, SPD: %3d, TP1: %6d, TP1ON: %6d\n", __dir, ADC0, __motor_duty, P1TPER, P1DC1/2);
         }
     }
     
