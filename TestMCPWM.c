@@ -61,10 +61,18 @@
 #define FORWARD 0x01
 #define BACKWARD 0x02
 
-char __dir, __STOPMotor = 0;                                 //
+char __dir = 0x01, __RUNMotor = 0;                                 //
+char millis = 0;
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void){
-    __dir ^= 0x01;
+    
+    if(millis == 50){
+     __dir ^= 0x03;
+     millis = 0;
+    }
+    else{
+        millis++;
+    }
     _T1IF = 0;
 }
 void __attribute__((interrupt, no_auto_psv)) _T3Interrupt(void){
@@ -74,18 +82,18 @@ void __attribute__((interrupt, no_auto_psv)) _T5Interrupt(void){
     _T5IF = 0;
 }
 void __attribute__((interrupt, no_auto_psv)) _INT0Interrupt(void){
-    __STOPMotor = 1;
+    __RUNMotor = 1;
     _INT0IF = 0;
 }
 void __attribute__((interrupt, no_auto_psv)) _INT1Interrupt(void){
-    __STOPMotor = 0;
+    __RUNMotor = 0;
     _INT1IF = 0;
 }
 void __attribute__((interrupt, no_auto_psv)) _INT2Interrupt(void){
     _INT2IF = 0;
 }
 
-void __setIO(int __byte1,int __byte2,int __byte3){
+void __setIO(unsigned int __byte1,unsigned int __byte2,unsigned int __byte3){
     AD1PCFGL = __byte1;
     TRISA = __byte2;
     TRISB = __byte3;
@@ -111,7 +119,7 @@ void __ExINT_MAPPING(char __selectINT, char __selectRP)
 void initPWM()
 {
      //setup PWM ports
-    
+     P1TCONbits.PTEN = 0;
      PWM1CON1 = 0;                                          //  Clear all bits (use defaults)
      
      PWM1CON1bits.PMOD1 = 1;                                //  PWM1L1,PWM1H1 are in independent running mode
@@ -136,8 +144,7 @@ void initPWM()
      P1TPER = (FCY  / 64 / MOTOR_PWM_FREQ) - 1;    
 
      //ENABLE PWM1
-     P1TMR = 0;
-     P1TCONbits.PTEN = 1; 
+     P1TMR = 0; 
 }
 void __updateFPWM(unsigned int __MOTOR_PWM_FREQ)
 {
@@ -192,7 +199,7 @@ void run_motor(char ch, char dir, char pow)
             LATBbits.LATB0 = 0;
             LATBbits.LATB1 = 1;
         }    
-    P1DC1 = (2UL*P1TPER+2)*pow/100;  // Update duty cycle 
+    P1DC1 = ((2UL*P1TPER+2)*pow)/100;  // Update duty cycle 
     }
     else if(ch == 0x02)
     {
@@ -204,19 +211,18 @@ void run_motor(char ch, char dir, char pow)
             LATBbits.LATB2 = 0;
             LATBbits.LATB3 = 1;
         }
-    P1DC2 = (2UL*P1TPER+2)*pow/100;  // Update duty cycle 
+    P1DC2 = ((2UL*P1TPER+2)*pow)/100;  // Update duty cycle 
     }
     else if(ch == 0x03)
     {
+        LATBbits.LATB6 = 0;
         if(dir == 0x01){
             LATBbits.LATB4 = 1;
-            LATBbits.LATB5 = 0;
         }
         else if(dir == 0x02){
             LATBbits.LATB4 = 0;
-            LATBbits.LATB5 = 1;
         }
-    P1DC3 = (2UL*P1TPER+2)*pow/100;  // Update duty cycle 
+    P1DC3 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle 
     }
     else if(ch == 0x66)
     {
@@ -232,8 +238,8 @@ void run_motor(char ch, char dir, char pow)
             LATBbits.LATB2 = 0;
             LATBbits.LATB3 = 1;
         }
-     P1DC1 = (2UL*P1TPER+2)*pow/100; // Update duty cycle 
-     P1DC2 = (2UL*P1TPER+2)*pow/100; // Update duty cycle
+     P1DC1 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle 
+     P1DC2 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle
         
     }
     else if(ch == 0x67)
@@ -244,7 +250,6 @@ void run_motor(char ch, char dir, char pow)
             LATBbits.LATB2 = 1;
             LATBbits.LATB3 = 0;
             LATBbits.LATB4 = 1;
-            LATBbits.LATB5 = 0;
         }
         else if(dir == 0x02){
             LATBbits.LATB0 = 0;
@@ -252,27 +257,31 @@ void run_motor(char ch, char dir, char pow)
             LATBbits.LATB2 = 0;
             LATBbits.LATB3 = 1;
             LATBbits.LATB4 = 0;
-            LATBbits.LATB5 = 1;
         }
-     P1DC1 = (2UL*P1TPER+2)*pow/100; // Update duty cycle 
-     P1DC2 = (2UL*P1TPER+2)*pow/100; // Update duty cycle
-     P1DC3 = (2UL*P1TPER+2)*pow/100; // Update duty cycle   
+     P1DC1 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle 
+     P1DC2 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle
+     P1DC3 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle   
     }
 }
 void stop_motor(char channel){
     switch(channel)
     {
-        case 1:
+        case 0x01:
         {
             LATBbits.LATB0 = 0;
             LATBbits.LATB1 = 0;
             break;
         }
-        case 2:
+        case 0x02:
         {
             LATBbits.LATB2 = 0;
             LATBbits.LATB3 = 0;
             break;
+        }
+        case 0x03:
+        {
+            LATBbits.LATB6 = 1;
+            P1DC3 = 0;
         }
         case 0x66:
         {
@@ -288,8 +297,7 @@ void stop_motor(char channel){
             LATBbits.LATB1 = 0;
             LATBbits.LATB2 = 0;
             LATBbits.LATB3 = 0;
-            LATBbits.LATB4 = 0;
-            LATBbits.LATB5 = 0;
+            P1DC3 = 0;
             break;
         }
         default:
@@ -298,56 +306,62 @@ void stop_motor(char channel){
             LATBbits.LATB1 = 0;
             LATBbits.LATB2 = 0;
             LATBbits.LATB3 = 0;
-            LATBbits.LATB4 = 0;
-            LATBbits.LATB5 = 0;
+            P1DC3 = 0;
             break;
         } 
     }
 }
+void LED8(char ch,unsigned int data)
+{
+    
+}
 int main(void) {
     
-    /* Set Port */
-    __setIO(0xFFFF, 0x0001, 0x0090); // Argument 1 Set all ports are Digital I/O, 
-    // Argument 2 Set all ports A are output, and Argument 3 Set all ports B are output except RB4 and RB7 are input.
+    // Set Port
+    __setIO(0xFFFE, 0x0001, 0x0090); //0x0090); // Argument 1 Set all ports are Digital I/O except RA0 (AN0) is analog, 
+    // Argument 2 Set all ports A are output except RA0 (AN0) is input, and Argument 3 Set all ports B are output except RB4 and RB7 are input.
     
-    /* Disable Global Interrupt*/
+    // Disable Global Interrupt
     GLOBAL_INT_DISABLE;
     initPLL();  // Initialize PLL at FCY = 40 MHz
     initPWM();  // Initialize PWM
     initADC();  // Initialize ADC
     
-    /* External Interrupt Configuration */
-    __ExINT_MAPPING(0x01,0x04);     // Remap External INT1 on RP4
+    // External Interrupt Configuration
+    __ExINT_MAPPING(0x01,0x05);     // Remap External INT1 on RP5
     
     INT0_ENABLE(1);                 // Enable INT0
     INT1_ENABLE(1);                 // Enable INT1
     INT0_TRIG_EDGE(0);              // Set INT0 Positive Edge
     INT1_TRIG_EDGE(0);              // Set INT1 Positive Edge
     
-    /* Timer1 Configuration */
+    // Timer1 Configuration
     TIMER1_PRESCALE(0b11);          // Timer1 1:256 Prescaler
-    TIMER1_PERIOD(15625);           // Set period every 10 milliseconds
+    TIMER1_PERIOD(15625);           // Set period every 0.1 milliseconds
     TIMER1_INT_ENABLE(1);           // Enable Timer1 Interrupt
     TIMER1_INT_PRIORITY(3);         // Set Timer1 Interrupt Priority by 3
     TIMER1_ON(1);                   // Enable Timer1 ON
-    
-    /* Enable Global Interrupt */
+
+    // Enable Global Interrupt
     GLOBAL_INT_ENABLE;
-    __updateFPWM(500);              // Update Frequency PWM 500 Hz
-    double ADC0;
-    char __motor_duty;
+    
+    __updateFPWM(100);              // Update Frequency PWM 300 Hz
+    
+    double ADC0,__motor_duty;
     while(1)
     {
         ADC0 = adc_value(0);                            // Reading ADC Channel 0
-        __motor_duty = (ADC0/1023.0)*100;               // DAC to Duty Cycle Calculation
-        if(__STOPMotor)                              // If __STOPM1status = 1
+        __motor_duty = (ADC0/1023.0)*100;               // Calculate 10 Bits-ADC to Duty Cycle Conversion
+        //__LED8Value = (ADC0/1023.0)*255;
+        if(__RUNMotor)                              // If __STOPM1status = 1
         {
-            stop_motor(ALL3);                           // Stop 3 Motor
+                                       // Stop 3 Motor
+            run_motor(0x66, __dir, (int)__motor_duty);
             //printf("All Motor has been stopped\n");
         }
         else
         {
-            run_motor(0x66, __dir, __motor_duty);       // Run Motor1,2
+            stop_motor(ALL2);       // Run Motor1,2
             //printf("M1DIR: %1d, ADC0: %4.2f, SPD: %3d, TP1: %6d, TP1ON: %6d\n", __dir, ADC0, __motor_duty, P1TPER, P1DC1/2);
         }
     }
