@@ -14,6 +14,7 @@
             <make-dep-projects/>
             <sourceRootList>
                 <sourceRootElem>.</sourceRootElem>
+                <sourceRootElem>../../FIBO/Year 3 Semester 1/FRA341 Embeded System Design/Week 5 (UART &amp; QEI)-20200908T032756Z-001/Week 5 (UART _ QEI)/Program</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

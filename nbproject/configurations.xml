@@ -5,6 +5,7 @@
                    displayName="Header Files"
                    projectFiles="true">
       <itemPath>configuration.h</itemPath>
+      <itemPath>UART_rev3.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -13,7 +14,8 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <itemPath>TestMCPWM.c</itemPath>
+      <itemPath>UART_rev3.c</itemPath>
+      <itemPath>FinalizeProjectG13.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -23,6 +25,7 @@
   </logicalFolder>
   <sourceRootList>
     <Elem>.</Elem>
+    <Elem>../../FIBO/Year 3 Semester 1/FRA341 Embeded System Design/Week 5 (UART &amp; QEI)-20200908T032756Z-001/Week 5 (UART _ QEI)/Program</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>

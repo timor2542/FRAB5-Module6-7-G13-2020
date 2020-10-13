@@ -11,6 +11,7 @@
 #include "xc.h"                                                 // Include XC16 Complier
 #include <stdio.h>                                              // Standard I/O Library
 #include "configuration.h"                                      // Bit Configuration
+#include "UART_rev3.h"
 
 // Global Interrupts Enable/Disable Configuration Zone
 #define GLOBAL_INT_DISABLE __builtin_disable_interrupts()       // Disable Global Interrupts
@@ -54,25 +55,22 @@
 // Frequency Configuration Zone
 #define FCY 40000000UL                                          // Cycle Frequency in Hz
 #define MOTOR_PWM_FREQ 500                                      // Motor PWM Frequency in Hz
-#define MOTOR_DUTY 70                                           // Motor Duty in %
 
+// Motor Configuration Zone
 #define ALL2 0x66
 #define ALL3 0x67
 #define FORWARD 0x01
 #define BACKWARD 0x02
 
+// LED8 Configuration Zone
+#define SHIFT_LED_MODE 0x01
+#define NORMAL_MODE 0x02
+
 char __dir = 0x01, __RUNMotor = 0;                                 //
 char millis = 0;
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void){
-    
-    if(millis == 50){
-     __dir ^= 0x03;
-     millis = 0;
-    }
-    else{
-        millis++;
-    }
+    millis++;
     _T1IF = 0;
 }
 void __attribute__((interrupt, no_auto_psv)) _T3Interrupt(void){
@@ -89,17 +87,14 @@ void __attribute__((interrupt, no_auto_psv)) _INT1Interrupt(void){
     __RUNMotor = 0;
     _INT1IF = 0;
 }
-void __attribute__((interrupt, no_auto_psv)) _INT2Interrupt(void){
-    _INT2IF = 0;
-}
 
-void __setIO(unsigned int __byte1,unsigned int __byte2,unsigned int __byte3){
+void setADIO(unsigned int __byte1,unsigned int __byte2,unsigned int __byte3){
     AD1PCFGL = __byte1;
     TRISA = __byte2;
     TRISB = __byte3;
 }
 
-void __ExINT_MAPPING(char __selectINT, char __selectRP)
+void ExINT_MAPPING(char __selectINT, char __selectRP)
 {
     OSCCON = 0x46;
     OSCCON = 0x57;
@@ -122,20 +117,24 @@ void initPWM()
      P1TCONbits.PTEN = 0;
      PWM1CON1 = 0;                                          //  Clear all bits (use defaults)
      
+     P2TCONbits.PTEN = 0;
+     PWM2CON1 = 0; 
+     
      PWM1CON1bits.PMOD1 = 1;                                //  PWM1L1,PWM1H1 are in independent running mode
      PWM1CON1bits.PMOD2 = 1;                                //  PWM1L2,PWM1H2 are in independent running mode
      PWM1CON1bits.PMOD3 = 1;                                //  PWM1L3,PWM1H3 are in independent running mode
+     PWM2CON1bits.PMOD1 = 1;                                //  PWM2L1,PWM2H1 are in independent running mode
      
      PWM1CON1bits.PEN1L = 0;                                //  PWM1L1 NORMAL I/O
      PWM1CON1bits.PEN1H = 1;                                //  PWM1H1 PWM OUTPUT
      PWM1CON1bits.PEN2L = 0;                                //  PWM1L2 NORMAL I/O
      PWM1CON1bits.PEN2H = 1;                                //  PWM1H2 PWM OUTPUT
      PWM1CON1bits.PEN3L = 0;                                //  PWM1L3 NORMAL I/O
-     PWM1CON1bits.PEN3H = 1;                                //  PWM1H3 PWM OUTPUT
+     PWM1CON1bits.PEN3H = 0;                                //  PWM1H3 NORMAL I/O
      
  
-     //PWM Mode and Pre-scaler
-     //PWM1,PWM2,PWM3,MOTOR1,MOTOR2,and MOTOR3    
+     //PWM1 Mode and Pre-scaler
+     //PWM1H,PWM2H ON DC MOTOR 2-Channel    
      P1TCON = 0;                    //  Clear all bits (use defaults)
      P1TCONbits.PTMOD = 0b00;       //  Free-runing mode 
      P1TCONbits.PTCKPS = 0b11;      //  1:64 prescaler
@@ -146,12 +145,19 @@ void initPWM()
      //ENABLE PWM1
      P1TMR = 0; 
 }
-void __updateFPWM(unsigned int __MOTOR_PWM_FREQ)
+void updateFreqPWM1(unsigned int __MOTOR_PWM_FREQ)
 {
     P1TCONbits.PTEN = 0;
     P1TPER = (FCY  / 64 / __MOTOR_PWM_FREQ) - 1;
     P1TMR = 0;
     P1TCONbits.PTEN = 1;
+}
+void updateFreqPWM2(unsigned int __MOTOR_PWM_FREQ)
+{
+    P2TCONbits.PTEN = 0;
+    P2TPER = (FCY  / 64 / __MOTOR_PWM_FREQ) - 1;
+    P2TMR = 0;
+    P2TCONbits.PTEN = 1;
 }
 void initPLL() // Set Fcy to 40 MHz
 {
@@ -187,6 +193,32 @@ int adc_value(int channel){
     AD1CON1bits.DONE = 0; // Clear conversion done status bit
     return ADC1BUF0;
 }
+void initUART_QEI12(char __chQEI1A, char __chQEI1B, char __chQEI2A, char __chQEI2B)
+{
+    __builtin_write_OSCCONL(OSCCON & 0xBF); // PPS RECONFIG UNLOCK 
+    
+    RPINR18bits.U1RXR = 6;                  
+    RPOR2bits.RP5R = 0b00011;           
+    RPINR14bits.QEA1R = __chQEI1A;          // Remap __chQEI1A connect to QEI1_A
+    RPINR14bits.QEB1R = __chQEI1B;          // Remap __chQEI1B connect to QEI1_B
+    RPINR16bits.QEA2R = __chQEI2A;          // Remap __chQEI2A connect to QEI2_A
+    RPINR16bits.QEB2R = __chQEI2B;          // Remap __chQEI2B connect to QEI2_B
+    
+    __builtin_write_OSCCONL(OSCCON | 0x40); //  PPS RECONFIG LOCK 
+    
+    /*QEI Mode Select*/
+    QEI1CONbits.QEIM = 0b000;           // QEI Mode disable
+    QEI1CONbits.PCDOUT = 0;             // no direction pin out
+    QEI1CONbits.QEIM = 0b111;           // 4x ,no index
+    /*digital filter config */
+    DFLT1CONbits.QECK = 0b000;          // clock divider Fcy/1
+    DFLT1CONbits.QEOUT = 1;             // enable filter
+    
+    UART1_Initialize(86, 347);
+}
+/*
+ * REV.L298N OLD
+ * 
 void run_motor(char ch, char dir, char pow)
 {
     if(ch == 0x01)
@@ -311,29 +343,57 @@ void stop_motor(char channel){
         } 
     }
 }
-void LED8(char ch,unsigned int data)
+*/
+void RB_LED8(unsigned char ch, unsigned char __RBinitialize,unsigned char __data) // Apply for RB0-RB13 and All port B must be I/O Ports
 {
+    LATB &= 0x0000;
+    if(ch == 0x01){
+        if(__RBinitialize >= 0 && __RBinitialize < 8)
+        {
+            if(__data > 0 && __data < 8)
+            {
+                LATB |= 1 << (__data + __RBinitialize);
+            }
+            else if(__data <= 0)
+            {
+                LATB |= 1 << __RBinitialize;
+            }
+            else if(__data >= 8)
+            {
+                LATB |= 1 << (__RBinitialize + 7);
+            }
+        }
+    }
+    else if(ch == 0x03)
+    {
+        LATB |= __data << __RBinitialize;
+    }
     
 }
 int main(void) {
     
     // Set Port
-    __setIO(0xFFFE, 0x0001, 0x0090); //0x0090); // Argument 1 Set all ports are Digital I/O except RA0 (AN0) is analog, 
-    // Argument 2 Set all ports A are output except RA0 (AN0) is input, and Argument 3 Set all ports B are output except RB4 and RB7 are input.
+    // Argument 1 Set all ports A/D I/O
+    // Argument 2 Set all ports A
+    // Argument 3 Set all ports B
+    setADIO(0xFFFE, 0x0001, 0x000F);
     
     // Disable Global Interrupt
     GLOBAL_INT_DISABLE;
     initPLL();  // Initialize PLL at FCY = 40 MHz
-    initPWM();  // Initialize PWM
+    //initPWM();  // Initialize PWM
     initADC();  // Initialize ADC
+    initUART_QEI12(0,1,2,3); // Initialize QEI1 and QEI2
     
     // External Interrupt Configuration
-    __ExINT_MAPPING(0x01,0x05);     // Remap External INT1 on RP5
+    /*
+     ExINT_MAPPING(0x01,0x05);     // Remap External INT1 on RP5
     
     INT0_ENABLE(1);                 // Enable INT0
     INT1_ENABLE(1);                 // Enable INT1
     INT0_TRIG_EDGE(0);              // Set INT0 Positive Edge
     INT1_TRIG_EDGE(0);              // Set INT1 Positive Edge
+    */
     
     // Timer1 Configuration
     TIMER1_PRESCALE(0b11);          // Timer1 1:256 Prescaler
@@ -345,25 +405,15 @@ int main(void) {
     // Enable Global Interrupt
     GLOBAL_INT_ENABLE;
     
-    __updateFPWM(100);              // Update Frequency PWM 300 Hz
+    //updateFreqPWM1(100);              // Update Frequency PWM 150 Hz
     
-    double ADC0,__motor_duty;
+    //double ADC0,__LED8Value;//,__motor_duty;
     while(1)
     {
-        ADC0 = adc_value(0);                            // Reading ADC Channel 0
-        __motor_duty = (ADC0/1023.0)*100;               // Calculate 10 Bits-ADC to Duty Cycle Conversion
-        //__LED8Value = (ADC0/1023.0)*255;
-        if(__RUNMotor)                              // If __STOPM1status = 1
-        {
-                                       // Stop 3 Motor
-            run_motor(0x66, __dir, (int)__motor_duty);
-            //printf("All Motor has been stopped\n");
-        }
-        else
-        {
-            stop_motor(ALL2);       // Run Motor1,2
-            //printf("M1DIR: %1d, ADC0: %4.2f, SPD: %3d, TP1: %6d, TP1ON: %6d\n", __dir, ADC0, __motor_duty, P1TPER, P1DC1/2);
-        }
+        //ADC0 = adc_value(0);                            // Reading ADC Channel 0
+        //__motor_duty = (ADC0/1023.0)*100;               // Calculate 10 Bits-ADC to Duty Cycle Conversion
+        //__LED8Value = (ADC0/1023.0)*8;
+        RB_LED8(SHIFT_LED_MODE,6,POS1CNT % 8);
     }
     
     return 0;

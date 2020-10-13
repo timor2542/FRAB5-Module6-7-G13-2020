@@ -57,17 +57,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=TestMCPWM.c
+SOURCEFILES_QUOTED_IF_SPACED=UART_rev3.c FinalizeProjectG13.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/TestMCPWM.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/TestMCPWM.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/UART_rev3.o ${OBJECTDIR}/FinalizeProjectG13.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/UART_rev3.o.d ${OBJECTDIR}/FinalizeProjectG13.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/TestMCPWM.o
+OBJECTFILES=${OBJECTDIR}/UART_rev3.o ${OBJECTDIR}/FinalizeProjectG13.o
 
 # Source Files
-SOURCEFILES=TestMCPWM.c
+SOURCEFILES=UART_rev3.c FinalizeProjectG13.c
 
 
 
@@ -95,20 +95,34 @@ MP_LINKER_FILE_OPTION=,--script=p33FJ64MC802.gld
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: compile
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${OBJECTDIR}/TestMCPWM.o: TestMCPWM.c  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/UART_rev3.o: UART_rev3.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/TestMCPWM.o.d 
-	@${RM} ${OBJECTDIR}/TestMCPWM.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  TestMCPWM.c  -o ${OBJECTDIR}/TestMCPWM.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/TestMCPWM.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1    -omf=elf -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -O0 -msmart-io=1 -Wall -msfr-warn=off    -mdfp="${DFP_DIR}/xc16"
-	@${FIXDEPS} "${OBJECTDIR}/TestMCPWM.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	@${RM} ${OBJECTDIR}/UART_rev3.o.d 
+	@${RM} ${OBJECTDIR}/UART_rev3.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  UART_rev3.c  -o ${OBJECTDIR}/UART_rev3.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/UART_rev3.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1    -omf=elf -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -O0 -msmart-io=1 -Wall -msfr-warn=off    -mdfp="${DFP_DIR}/xc16"
+	@${FIXDEPS} "${OBJECTDIR}/UART_rev3.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	
+${OBJECTDIR}/FinalizeProjectG13.o: FinalizeProjectG13.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/FinalizeProjectG13.o.d 
+	@${RM} ${OBJECTDIR}/FinalizeProjectG13.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  FinalizeProjectG13.c  -o ${OBJECTDIR}/FinalizeProjectG13.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/FinalizeProjectG13.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1    -omf=elf -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -O0 -msmart-io=1 -Wall -msfr-warn=off    -mdfp="${DFP_DIR}/xc16"
+	@${FIXDEPS} "${OBJECTDIR}/FinalizeProjectG13.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 else
-${OBJECTDIR}/TestMCPWM.o: TestMCPWM.c  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/UART_rev3.o: UART_rev3.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/TestMCPWM.o.d 
-	@${RM} ${OBJECTDIR}/TestMCPWM.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  TestMCPWM.c  -o ${OBJECTDIR}/TestMCPWM.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/TestMCPWM.o.d"        -g -omf=elf -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -O0 -msmart-io=1 -Wall -msfr-warn=off    -mdfp="${DFP_DIR}/xc16"
-	@${FIXDEPS} "${OBJECTDIR}/TestMCPWM.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	@${RM} ${OBJECTDIR}/UART_rev3.o.d 
+	@${RM} ${OBJECTDIR}/UART_rev3.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  UART_rev3.c  -o ${OBJECTDIR}/UART_rev3.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/UART_rev3.o.d"        -g -omf=elf -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -O0 -msmart-io=1 -Wall -msfr-warn=off    -mdfp="${DFP_DIR}/xc16"
+	@${FIXDEPS} "${OBJECTDIR}/UART_rev3.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	
+${OBJECTDIR}/FinalizeProjectG13.o: FinalizeProjectG13.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/FinalizeProjectG13.o.d 
+	@${RM} ${OBJECTDIR}/FinalizeProjectG13.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  FinalizeProjectG13.c  -o ${OBJECTDIR}/FinalizeProjectG13.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/FinalizeProjectG13.o.d"        -g -omf=elf -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -O0 -msmart-io=1 -Wall -msfr-warn=off    -mdfp="${DFP_DIR}/xc16"
+	@${FIXDEPS} "${OBJECTDIR}/FinalizeProjectG13.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 endif
 
