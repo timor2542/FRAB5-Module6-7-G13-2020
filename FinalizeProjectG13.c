@@ -54,20 +54,20 @@
 
 // Frequency Configuration Zone
 #define FCY 40000000UL                                          // Cycle Frequency in Hz
-#define MOTOR_PWM_FREQ 500                                      // Motor PWM Frequency in Hz
+#define MOTOR_PWM_FREQ 50                                      // Motor PWM Frequency in Hz
 
 // Motor Configuration Zone
 #define ALL2 0x66
 #define ALL3 0x67
-#define FORWARD 0x01
-#define BACKWARD 0x02
+#define FORWARD 0x00
+#define BACKWARD 0x01
 
 // LED8 Configuration Zone
 #define SHIFT_LED_MODE 0x01
 #define NORMAL_MODE 0x02
 
-char __dir = 0x01, __RUNMotor = 0;                                 //
-char millis = 0;
+char __dir = 0x00, __RUNMotor = 0;                                 //
+int millis = 0;
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void){
     millis++;
@@ -131,19 +131,25 @@ void initPWM()
      PWM1CON1bits.PEN2H = 1;                                //  PWM1H2 PWM OUTPUT
      PWM1CON1bits.PEN3L = 0;                                //  PWM1L3 NORMAL I/O
      PWM1CON1bits.PEN3H = 0;                                //  PWM1H3 NORMAL I/O
-     
- 
+     PWM2CON1bits.PEN1L = 0;                                //  PWM2L1 NORMAL I/O
+     PWM2CON1bits.PEN1H = 1;                                //  PWM2H1 PWM OUTPUT
+
      //PWM1 Mode and Pre-scaler
-     //PWM1H,PWM2H ON DC MOTOR 2-Channel    
+     //PWM1H,PWM2H ON DC MOTOR 2-Channel and 1-Channel    
      P1TCON = 0;                    //  Clear all bits (use defaults)
      P1TCONbits.PTMOD = 0b00;       //  Free-runing mode 
      P1TCONbits.PTCKPS = 0b11;      //  1:64 prescaler
+     P2TCON = 0;                    //  Clear all bits (use defaults)
+     P2TCONbits.PTMOD = 0b00;       //  Free-runing mode 
+     P2TCONbits.PTCKPS = 0b11;      //  1:64 prescaler
  
      //Setup desired frequency by setting period for 1:64 prescaler
-     P1TPER = (FCY  / 64 / MOTOR_PWM_FREQ) - 1;    
+     P1TPER = (FCY  / 64 / MOTOR_PWM_FREQ) - 1;
+     P2TPER = (FCY  / 64 / MOTOR_PWM_FREQ) - 1;
 
      //ENABLE PWM1
-     P1TMR = 0; 
+     P1TMR = 0;
+     P2TMR = 0; 
 }
 void updateFreqPWM1(unsigned int __MOTOR_PWM_FREQ)
 {
@@ -197,8 +203,8 @@ void initUART_QEI12(char __chQEI1A, char __chQEI1B, char __chQEI2A, char __chQEI
 {
     __builtin_write_OSCCONL(OSCCON & 0xBF); // PPS RECONFIG UNLOCK 
     
-    RPINR18bits.U1RXR = 6;                  
-    RPOR2bits.RP5R = 0b00011;           
+    RPINR18bits.U1RXR = 6;                  // Set UART1 RX to MCU pin
+    RPOR2bits.RP5R = 0b00011;               // Set UART1 TX from MCU pin
     RPINR14bits.QEA1R = __chQEI1A;          // Remap __chQEI1A connect to QEI1_A
     RPINR14bits.QEB1R = __chQEI1B;          // Remap __chQEI1B connect to QEI1_B
     RPINR16bits.QEA2R = __chQEI2A;          // Remap __chQEI2A connect to QEI2_A
@@ -206,151 +212,33 @@ void initUART_QEI12(char __chQEI1A, char __chQEI1B, char __chQEI2A, char __chQEI
     
     __builtin_write_OSCCONL(OSCCON | 0x40); //  PPS RECONFIG LOCK 
     
-    /*QEI Mode Select*/
+    /*QEI1 Mode Select*/
     QEI1CONbits.QEIM = 0b000;           // QEI Mode disable
     QEI1CONbits.PCDOUT = 0;             // no direction pin out
     QEI1CONbits.QEIM = 0b111;           // 4x ,no index
-    /*digital filter config */
-    DFLT1CONbits.QECK = 0b000;          // clock divider Fcy/1
+    
+    /*QEI2 Mode Select*/
+    QEI2CONbits.QEIM = 0b000;           // QEI Mode disable
+    QEI2CONbits.PCDOUT = 0;             // no direction pin out
+    QEI2CONbits.QEIM = 0b111;           // 4x ,no index
+    
+    /*Digital Filter QEI1 Config */
+    DFLT1CONbits.QECK = 0b111;          // clock divider Fcy/256
     DFLT1CONbits.QEOUT = 1;             // enable filter
     
-    UART1_Initialize(86, 347);
+    /*Digital Filter QEI2 Config */
+    DFLT2CONbits.QECK = 0b111;          // clock divider Fcy/256
+    DFLT2CONbits.QEOUT = 1;             // enable filter
+    
 }
-/*
- * REV.L298N OLD
- * 
-void run_motor(char ch, char dir, char pow)
-{
-    if(ch == 0x01)
-    {
-        if(dir == 0x01){
-            LATBbits.LATB0 = 1;
-            LATBbits.LATB1 = 0;
-        }
-        else if(dir == 0x02){
-            LATBbits.LATB0 = 0;
-            LATBbits.LATB1 = 1;
-        }    
-    P1DC1 = ((2UL*P1TPER+2)*pow)/100;  // Update duty cycle 
-    }
-    else if(ch == 0x02)
-    {
-        if(dir == 0x01){
-            LATBbits.LATB2 = 1;
-            LATBbits.LATB3 = 0;
-        }
-        else if(dir == 0x02){
-            LATBbits.LATB2 = 0;
-            LATBbits.LATB3 = 1;
-        }
-    P1DC2 = ((2UL*P1TPER+2)*pow)/100;  // Update duty cycle 
-    }
-    else if(ch == 0x03)
-    {
-        LATBbits.LATB6 = 0;
-        if(dir == 0x01){
-            LATBbits.LATB4 = 1;
-        }
-        else if(dir == 0x02){
-            LATBbits.LATB4 = 0;
-        }
-    P1DC3 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle 
-    }
-    else if(ch == 0x66)
-    {
-        if(dir == 0x01){
-            LATBbits.LATB0 = 1;
-            LATBbits.LATB1 = 0;
-            LATBbits.LATB2 = 1;
-            LATBbits.LATB3 = 0;
-        }
-        else if(dir == 0x02){
-            LATBbits.LATB0 = 0;
-            LATBbits.LATB1 = 1;
-            LATBbits.LATB2 = 0;
-            LATBbits.LATB3 = 1;
-        }
-     P1DC1 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle 
-     P1DC2 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle
-        
-    }
-    else if(ch == 0x67)
-    {
-        if(dir == 0x01){
-            LATBbits.LATB0 = 1;
-            LATBbits.LATB1 = 0;
-            LATBbits.LATB2 = 1;
-            LATBbits.LATB3 = 0;
-            LATBbits.LATB4 = 1;
-        }
-        else if(dir == 0x02){
-            LATBbits.LATB0 = 0;
-            LATBbits.LATB1 = 1;
-            LATBbits.LATB2 = 0;
-            LATBbits.LATB3 = 1;
-            LATBbits.LATB4 = 0;
-        }
-     P1DC1 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle 
-     P1DC2 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle
-     P1DC3 = ((2UL*P1TPER+2)*pow)/100; // Update duty cycle   
-    }
-}
-void stop_motor(char channel){
-    switch(channel)
-    {
-        case 0x01:
-        {
-            LATBbits.LATB0 = 0;
-            LATBbits.LATB1 = 0;
-            break;
-        }
-        case 0x02:
-        {
-            LATBbits.LATB2 = 0;
-            LATBbits.LATB3 = 0;
-            break;
-        }
-        case 0x03:
-        {
-            LATBbits.LATB6 = 1;
-            P1DC3 = 0;
-        }
-        case 0x66:
-        {
-            LATBbits.LATB0 = 0;
-            LATBbits.LATB1 = 0;
-            LATBbits.LATB2 = 0;
-            LATBbits.LATB3 = 0;
-            break;
-        }
-        case 0x67:
-        {
-            LATBbits.LATB0 = 0;
-            LATBbits.LATB1 = 0;
-            LATBbits.LATB2 = 0;
-            LATBbits.LATB3 = 0;
-            P1DC3 = 0;
-            break;
-        }
-        default:
-        {
-            LATBbits.LATB0 = 0;
-            LATBbits.LATB1 = 0;
-            LATBbits.LATB2 = 0;
-            LATBbits.LATB3 = 0;
-            P1DC3 = 0;
-            break;
-        } 
-    }
-}
-*/
-void RB_LED8(unsigned char ch, unsigned char __RBinitialize,unsigned char __data) // Apply for RB0-RB13 and All port B must be I/O Ports
+
+void RB_LED8(char ch, char __RBinitialize,unsigned char __data) // Apply for RB0-RB13 and All port B must be I/O Ports
 {
     LATB &= 0x0000;
     if(ch == 0x01){
         if(__RBinitialize >= 0 && __RBinitialize < 8)
         {
-            if(__data > 0 && __data < 8)
+            if(__data > 0 && __data < 7)
             {
                 LATB |= 1 << (__data + __RBinitialize);
             }
@@ -358,7 +246,7 @@ void RB_LED8(unsigned char ch, unsigned char __RBinitialize,unsigned char __data
             {
                 LATB |= 1 << __RBinitialize;
             }
-            else if(__data >= 8)
+            else if(__data >= 7)
             {
                 LATB |= 1 << (__RBinitialize + 7);
             }
@@ -370,6 +258,84 @@ void RB_LED8(unsigned char ch, unsigned char __RBinitialize,unsigned char __data
     }
     
 }
+void PWM1_Run(char ch, char dir, char pow){
+    if(ch == 0x01)
+    {
+        if(dir == 0x00)
+        {
+            LATAbits.LATA2 = 0;
+        }
+        else if(dir == 0x01)
+        {
+            LATAbits.LATA2 = 1;
+        }
+        P1DC1 = (2UL+2*P1TPER)*pow/100;
+        P1DC2 = 0;
+        P1DC3 = 0;
+    }
+    else if(ch == 0x02)
+    {
+        if(dir == 0x00)
+        {
+            LATAbits.LATA3 = 0;
+        }
+        else if(dir == 0x01)
+        {
+            LATAbits.LATA3 = 1;
+        }
+        P1DC1 = 0;
+        P1DC2 = (2UL+2*P1TPER)*pow/100;
+        P1DC3 = 0;
+    }
+    else if(ch == 0x66)
+    {
+        if(dir == 0x00)
+        {
+            LATAbits.LATA2 = 0;
+            LATAbits.LATA3 = 0;
+        }
+        else if(dir == 0x01)
+        {
+            LATAbits.LATA2 = 1;
+            LATAbits.LATA3 = 1;
+        }
+        P1DC1 = (2UL+2*P1TPER)*pow/100;
+        P1DC2 = (2UL+2*P1TPER)*pow/100;
+        P1DC3 = 0;
+    }
+}
+void PWM2_Run(char ch, char pow){
+
+    if(ch == 0x01)
+    {
+        P2DC1 = (2UL+2*P2TPER)*pow/100;
+    }
+}
+void PWM1_Stop(char ch)
+{
+    if(ch == 0x01)
+    {
+        P1DC1 = 0;
+    }
+    else if(ch == 0x02)
+    {
+        P1DC2 = 0;
+    }
+    else if(ch == 0x66){
+        P1DC1 = 0;
+        P1DC2 = 0;
+    }
+}
+void PWM2_Stop(char ch, char pow){
+
+    if(ch == 0x01)
+    {
+        P2DC1 = 0;
+    }
+}
+/*void buzzer(char)
+
+ */
 int main(void) {
     
     // Set Port
@@ -380,20 +346,21 @@ int main(void) {
     
     // Disable Global Interrupt
     GLOBAL_INT_DISABLE;
+    
+    // Initialize
     initPLL();  // Initialize PLL at FCY = 40 MHz
-    //initPWM();  // Initialize PWM
+    initPWM();  // Initialize PWM
     initADC();  // Initialize ADC
     initUART_QEI12(0,1,2,3); // Initialize QEI1 and QEI2
     
     // External Interrupt Configuration
-    /*
-     ExINT_MAPPING(0x01,0x05);     // Remap External INT1 on RP5
+    ExINT_MAPPING(0x01,0x05);     // Remap External INT1 on RP5
     
+    // Enable External Interrupt
     INT0_ENABLE(1);                 // Enable INT0
     INT1_ENABLE(1);                 // Enable INT1
     INT0_TRIG_EDGE(0);              // Set INT0 Positive Edge
     INT1_TRIG_EDGE(0);              // Set INT1 Positive Edge
-    */
     
     // Timer1 Configuration
     TIMER1_PRESCALE(0b11);          // Timer1 1:256 Prescaler
@@ -401,19 +368,38 @@ int main(void) {
     TIMER1_INT_ENABLE(1);           // Enable Timer1 Interrupt
     TIMER1_INT_PRIORITY(3);         // Set Timer1 Interrupt Priority by 3
     TIMER1_ON(1);                   // Enable Timer1 ON
-
+   
+    // UART1 Initialize Communication
+    UART1_Initialize(86, 347);
+    
     // Enable Global Interrupt
     GLOBAL_INT_ENABLE;
+ 
+    // Update Frequency of PWM1 and PWM2
+    updateFreqPWM1(30);
+    updateFreqPWM2(100);
     
-    //updateFreqPWM1(100);              // Update Frequency PWM 150 Hz
+    int lastValue;
+    float ADC0,__motor_duty;
     
-    //double ADC0,__LED8Value;//,__motor_duty;
     while(1)
     {
-        //ADC0 = adc_value(0);                            // Reading ADC Channel 0
-        //__motor_duty = (ADC0/1023.0)*100;               // Calculate 10 Bits-ADC to Duty Cycle Conversion
-        //__LED8Value = (ADC0/1023.0)*8;
+        ADC0 = adc_value(0);                            // Reading ADC Channel 0
+        __motor_duty = (ADC0/1023.0)*100;               // Calculate 10 Bits-ADC to Duty Cycle Conversion
         RB_LED8(SHIFT_LED_MODE,6,POS1CNT % 8);
+        if (lastValue != POS1CNT) {
+            printf("pulse = %d\n", POS1CNT);
+            lastValue = POS1CNT;
+        }
+        if(__RUNMotor)
+        {
+            PWM1_Run(ALL2,FORWARD,__motor_duty);
+        }
+        else
+        {
+            PWM1_Stop(ALL2);
+        }
+        
     }
     
     return 0;
