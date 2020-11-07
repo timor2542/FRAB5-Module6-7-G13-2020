@@ -14,38 +14,6 @@
 #include "configuration.h"                                      // Bit Configuration
 #include "UART_rev3.h"
 #include "FRAB5G13Define.h"
-
-void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
-{
-    
-    _T1IF = 0;
-}
-void __attribute__((interrupt, no_auto_psv)) _T3Interrupt(void)
-{
-    
-    _T3IF = 0;
-}
-void __attribute__((interrupt, no_auto_psv)) _T5Interrupt(void)
-{
-    
-    _T5IF = 0;
-}
-void __attribute__((interrupt, no_auto_psv)) _INT0Interrupt(void)
-{
-
-    _INT0IF = 0;
-}
-void __attribute__((interrupt, no_auto_psv)) _INT1Interrupt(void)
-{
-
-    _INT1IF = 0;
-}
-void __attribute__((interrupt, no_auto_psv)) _INT2Interrupt(void)
-{
-    
-    _INT2IF = 0;
-}
-
 long MIN(long x,long y)
 {
     return (x < y) ? x : y;
@@ -54,20 +22,20 @@ long MAX(long x,long y)
 {
     return (x > y) ? x : y;
 }
-long map(long x, long in_min, long in_max, long out_min, long out_max) {
+long map(long x, long in_min, long in_max, long out_min, long out_max) 
+{
  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-double mapf(double val, double in_min, double in_max, double out_min, double out_max) {
+double mapf(double val, double in_min, double in_max, double out_min, double out_max) 
+{
     return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-
 void Reset_PID()
 {
     PID_Integrated = 0.0;
     PID_Prev_Input = 0.0;
     PID_First_Time = TRUE;
 }
-
 void Init_PID(double Kp, double Ki, double Kd, double MinOutput, double MaxOutput)
 {
     PID_Kp         = Kp;
@@ -79,51 +47,43 @@ void Init_PID(double Kp, double Ki, double Kd, double MinOutput, double MaxOutpu
     PID_Prev_Input = 0.0;
     PID_First_Time = TRUE;
 }
-
 double PID_Calculate(double SetPoint, double InputValue)
 {
     double Err, ErrValue, DiffValue, Result;
 //    char dir = 0;
 
     Err = SetPoint - InputValue;
-    if(abs(Err) < MARGIN)
+    
+    ErrValue  = Err * PID_Kp;
+
+    // --- Calculate integrated value ---
+    PID_Integrated = PID_Integrated + (Err * PID_Ki);
+    // limit it to output minimum and maximum
+    if (PID_Integrated < PID_MinOutput) 
+      PID_Integrated = PID_MinOutput;
+    if (PID_Integrated > PID_MaxOutput)
+      PID_Integrated = PID_MaxOutput;
+
+    // --- calculate derivative value ---
+    if (PID_First_Time)
     {
-        Result = 0;
+      // to avoid a huge DiffValue the first time (PID_Prev_Input = 0)
+      PID_First_Time = FALSE;
+      PID_Prev_Input = InputValue;
     }
-    else
+    DiffValue = (InputValue - PID_Prev_Input) * PID_Kd;
+    PID_Prev_Input = InputValue;
+
+    // --- calculate total ---
+    Result = ErrValue + PID_Integrated + DiffValue; // mind the minus sign!!!
+    // limit it to output minimum and maximum
+    if (Result < PID_MinOutput)
     {
-                // --- calculate proportional value ---
-        ErrValue  = Err * PID_Kp;
-
-        // --- Calculate integrated value ---
-        PID_Integrated = PID_Integrated + (Err * PID_Ki);
-        // limit it to output minimum and maximum
-        if (PID_Integrated < PID_MinOutput) 
-          PID_Integrated = PID_MinOutput;
-        if (PID_Integrated > PID_MaxOutput)
-          PID_Integrated = PID_MaxOutput;
-
-        // --- calculate derivative value ---
-        if (PID_First_Time)
-        {
-          // to avoid a huge DiffValue the first time (PID_Prev_Input = 0)
-          PID_First_Time = FALSE;
-          PID_Prev_Input = InputValue;
-        }
-        DiffValue = (InputValue - PID_Prev_Input) * PID_Kd;
-        PID_Prev_Input = InputValue;
-
-        // --- calculate total ---
-        Result = ErrValue + PID_Integrated + DiffValue; // mind the minus sign!!!
-        // limit it to output minimum and maximum
-        if (Result < PID_MinOutput)
-        {
-            Result = PID_MinOutput;
-        }
-        else if (Result > PID_MaxOutput)
-        {
-            Result = PID_MaxOutput;
-        }
+        Result = PID_MinOutput;
+    }
+    else if (Result > PID_MaxOutput)
+    {
+        Result = PID_MaxOutput;
     }
     
     if(Result < 0)
@@ -136,7 +96,6 @@ double PID_Calculate(double SetPoint, double InputValue)
     }
     return (abs(Result));
 }
-
 void setADIO(unsigned int __byte1,unsigned int __byte2,unsigned int __byte3)// Set
 {
     AD1PCFGL = __byte1;
@@ -385,10 +344,10 @@ void initOCServo() // Timer23
     TIMER2_PRESCALE(0b10); //set timer prescaler to 1:64
     TIMER3_PRESCALE(0b10); //set timer prescaler to 1:64
     
-    PR2 = 12500;            //set period to 12500 tick per cycle
+    PR2 = 12500;            //set period to 12,500 tick per cycle (Frequency of Servo = 50 Hz)
     OC1CONbits.OCTSEL = 0;  //OC1 use timer2 as counter source
     
-    PR3 = 12500;            //set period to 15,625 tick per cycle 
+    PR3 = 12500;            //set period to 12,500 tick per cycle (Frequency of Servo = 50 Hz)
     OC2CONbits.OCTSEL = 1;  //OC2 use timer3 as counter source
 
     __builtin_write_OSCCONL(OSCCON & 0xBF); //PPS RECONFIG UNLOCK 
@@ -410,7 +369,7 @@ void servo_angle(char ch, signed int angle) //set velocity
         }
         else if(angle >= 0 && angle <= 180)
         {
-            long value = map(angle,0,180,315,1560);
+            long value = map(angle,0,180,315,1560); // Angle 0-180 = OCxRS 315-1560
             OC1RS = value;
         }
     }
@@ -423,7 +382,7 @@ void servo_angle(char ch, signed int angle) //set velocity
         }
         else if(angle >= 0 && angle <= 180)
         {
-            long value = map(angle,0,180,315,1560);
+            long value = map(angle,0,180,315,1560); // Angle 0-180 = OCxRS 315-1560
             OC2RS = value;
         }
     }
@@ -436,7 +395,7 @@ void servo_angle(char ch, signed int angle) //set velocity
         }
         else if(angle > 0 && angle <= 180)
         {
-            long value = map(angle,0,180,315,1560);
+            long value = map(angle,0,180,315,1560); // Angle 0-180 = OCxRS 315-1560
             OC1RS = value;
             OC2RS = value;
         }
@@ -461,11 +420,32 @@ void servo_stop(char ch)
         }
     }
 }
-int numByte;
-uint8_t dataArray[1];
-int main(void) 
+void updatePositionX(long _posx)
 {
-    // Set Port
+    set_position_x = _posx;
+}
+void updatePositionY(long _posy)
+{
+    set_position_y = _posy;
+}
+void updatePositionZ(long _posz)
+{
+    set_position_z = _posz;
+}
+void updatePositionXYZ(long _posx, long _posy, long _posz)
+{
+    set_position_x = _posx;
+    set_position_y = _posy;
+    set_position_z = _posz;
+}
+void ResetPulse()
+{
+    POS1CNT = 0;
+    POS2CNT = 0;
+}
+void initALL()
+{
+        // Set Port
     // Argument 1 Set all ports A/D I/O;    Analog = 0, Digital = 1
     // Argument 2 Set all ports A I/O       Output = 0, Input = 1
     // Argument 3 Set all ports B I/O       Output = 0, Input = 1
@@ -476,6 +456,7 @@ int main(void)
     
     // Initialize
     initPLL();  // Initialize PLL at FCY = 40 MHz
+    initTimer1();
     initPWM();  // Initialize PWM
     initADC();  // Initialize ADC
     
@@ -484,63 +465,106 @@ int main(void)
     XINT(2,10);     // Remap External INT2 on RP10
     
     initQEI(); // Initialize QEI1 and QEI2
-    //initOCServo();
+    initOCServo();
 
     // Enable External Interrupt
     INT0_TRIG_EDGE(POSITIVE_EDGE);              // Set INT0 Positive Edge
     INT1_TRIG_EDGE(POSITIVE_EDGE);              // Set INT1 Positive Edge
     INT2_TRIG_EDGE(POSITIVE_EDGE);              // Set INT2 Positive Edge
-    INT0_PRIORITY(7);               // Set INT0 Interrupt Priority by 7
-    INT1_PRIORITY(6);               // Set INT1 Interrupt Priority by 6
-    INT2_PRIORITY(5);               // Set INT2 Interrupt Priority by 5
+    INT0_PRIORITY(5);               // Set INT0 Interrupt Priority by 7
+    INT1_PRIORITY(4);               // Set INT1 Interrupt Priority by 6
+    INT2_PRIORITY(3);               // Set INT2 Interrupt Priority by 5
     INT0_ENABLE;                 // Enable INT0
     INT1_ENABLE;                 // Enable INT1
     INT2_ENABLE;                 // Enable INT2
     
     // UART1 Initialize Communication at Baud Rate 115200 bps
     UART1_Initialize(86, 347);
-
+    _U1RXIP = 2;
     // Update Frequency of PWM1 and PWM2
     PWM1Freq(500);
     PWM1_ENABLE;
-    //PWM2Freq(10000);
-    //PWM2_ENABLE;
+    PWM2Freq(10000);
+    PWM2_ENABLE;
     
-    //TIMER2_ON;
-    //TIMER3_ON;
+    TIMER2_ON;
+    TIMER3_ON;
     // Enable Global Interrupt
-    GLOBAL_INT_ENABLE;
+    TIMER1INT_ENABLE;
+    TIMER1_INT_PRIORITY(1);
+    
     _LATB15 = 0;
-    Init_PID(1,0,0,-30,30);
-    while(1)
+    ResetPulse();
+    updatePositionXYZ(0,0,0);
+    Init_PID(1,0,0,-30,30); // Ki, Kp, Kd, MinDCPWM, MaxDCPWM
+    
+    GLOBAL_INT_ENABLE;
+}
+/*long step_pluse2mm()
+{
+    return 0;
+}*/
+void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
+{
+    if(Running == TRUE)
     {
-        //PWM1(M1, !FORWARD, (int)PID_Calculate(300,POS1CNT));
-        numByte = UART1_ReadBuffer(dataArray, 1);
-        if (numByte != 0) {
-            if(dataArray[0] == 'c')
-            {
-                set_position = 1000;
-            }
-            else if(dataArray[0] == 'b')
-            {
-                set_position = 500;
-            }
-            else if(dataArray[0] == 'a')
-            {
-                set_position = 200;
-            }
-            else{
-                set_position = 0;
-            }
-         }
-        if(PORTBbits.RB0 == 1)
+        if(abs(set_position_x - POS1CNT) < MARGIN) //&& abs(set_position_y - POS2CNT) < MARGIN && abs(set_position_z - ???) < MARGIN)
         {
-            PWM1(M1, !DIR, (int)PID_Calculate(set_position,POS1CNT));
-        }  
+            Running = FALSE;
+            PWM1Stop(ALL2);
+            PWM2Stop();
+        }
         else
         {
-            PWM1Stop(ALL2);
+            Running = TRUE;
+            PWM1(M1, !DIR, (int)PID_Calculate(set_position_x,POS1CNT));
+            //PWM1(M2, !DIR, (int)PID_Calculate(set_position_y,POS2CNT));
+            //PWM2(!DIR, (int)PID_Calculate(set_position_z,???));
         }
+        AnPos = (2.0 * PI * POS1CNT) / PPR;
+        Distance = (2.0 * PI * SHAFT_MOTOR_RADIUS) * (AnPos / 360.0);
+        printf("AnPos = %.2f, Distance = %.2f\n",AnPos,Distance);
+    }  
+    else
+    {
+        PWM1Stop(ALL2);
+    }
+    _T1IF = 0;
+}
+void __attribute__((interrupt, no_auto_psv)) _T3Interrupt(void)
+{
+    
+    _T3IF = 0;
+}
+void __attribute__((interrupt, no_auto_psv)) _T5Interrupt(void)
+{
+    
+    _T5IF = 0;
+}
+void __attribute__((interrupt, no_auto_psv)) _INT0Interrupt(void)
+{
+
+    _INT0IF = 0;
+}
+void __attribute__((interrupt, no_auto_psv)) _INT1Interrupt(void)
+{
+
+    _INT1IF = 0;
+}
+void __attribute__((interrupt, no_auto_psv)) _INT2Interrupt(void)
+{
+    
+    _INT2IF = 0;
+}
+int main(void) 
+{
+    initALL();
+    while(1)
+    {
+        numByte = UART1_ReadBuffer(dataArray, 1);
+        if (numByte != 0) {
+            Running == TRUE;
+         }
     }
     return 0;
 }

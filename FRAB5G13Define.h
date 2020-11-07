@@ -96,15 +96,30 @@ double PID_Integrated;
 double PID_Prev_Input;
 double PID_MinOutput, PID_MaxOutput;
 BOOL PID_First_Time;
-BOOL PID_is_working;
+BOOL Running = FALSE;
+BOOL Go_State = FALSE;
 
 char DIR = 0;
-unsigned int set_position = 0;
+long set_position_x = 0;
+long set_position_y = 0;
+long set_position_z = 0;
+
+
+int numByte;
+uint8_t dataArray[1];
 
 #define PPSUnlock __builtin_write_OSCCONL(OSCCON & 0xBF)
 #define PPSLock __builtin_write_OSCCONL(OSCCON | 0x40)
 
-volatile uint64_t t = 0;
+double t,Distance,AnPos;
+
+#define INPUT_VOLTAGE 12.00
+#define PI 3.14
+#define RPM 15000.00
+#define PPR 48.00
+#define TIME_SAMPLING 0.01
+
+#define SHAFT_MOTOR_RADIUS 4
 
 #endif	/* XC_HEADER_TEMPLATE_H */
 
