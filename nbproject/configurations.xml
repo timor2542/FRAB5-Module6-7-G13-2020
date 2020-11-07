@@ -6,6 +6,7 @@
                    projectFiles="true">
       <itemPath>configuration.h</itemPath>
       <itemPath>UART_rev3.h</itemPath>
+      <itemPath>FRAB5G13Define.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
