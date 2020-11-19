@@ -105,8 +105,8 @@ static volatile UART_OBJECT uart1_obj ;
 
 */
 
-#define UART1_CONFIG_TX_BYTEQ_LENGTH 10
-#define UART1_CONFIG_RX_BYTEQ_LENGTH 10
+#define UART1_CONFIG_TX_BYTEQ_LENGTH 15
+#define UART1_CONFIG_RX_BYTEQ_LENGTH 15
 
 /** UART Driver Queue
 

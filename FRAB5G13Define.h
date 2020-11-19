@@ -51,8 +51,11 @@
 #define TIMER45_COMBINE(x) T4CONbits.T32 = x                    // Enable Combine Timer45
 #define TIMER5HB_PERIOD(x) PR5 = x                              // Set Timer5 Period
 #define TIMER4LB_PERIOD(x) PR4 = x                              // Set Timer4 Period
+#define TIMER4INT_ENABLE _T4IE = 1                          // Enable Interrupt Timer1
+#define TIMER4INT_DISABLE _T4IE = 0                          // Enable Interrupt Timer1
 #define TIMER5INT_ENABLE _T5IE = 1                          // Enable Interrupt Timer1
 #define TIMER5INT_DISABLE _T5IE = 0                          // Enable Interrupt Timer1
+#define TIMER4_INT_PRIORITY(x) _T4IP = x                        // Set Priority of Interrupt Timer5
 #define TIMER5_INT_PRIORITY(x) _T5IP = x                        // Set Priority of Interrupt Timer5
 #define TIMER4_ON T4CONbits.TON = 1                         // Enable Timer1
 #define TIMER4_OFF T4CONbits.TON = 0                          // Enable Timer1
@@ -85,7 +88,7 @@
 #define SHIFT_LED_MODE 0x01
 #define NORMAL_MODE 0x02
 
-#define MARGIN 13
+#define MARGIN 15
 
 #define BOOL unsigned char
 #define TRUE 1
@@ -95,23 +98,48 @@ double PID_Kp, PID_Ki, PID_Kd;
 double PID_Integrated;
 double PID_Prev_Input;
 double PID_MinOutput, PID_MaxOutput;
+
+double PID_KpX, PID_KiX, PID_KdX;
+double PID_IntegratedX;
+double PID_Prev_InputX;
+double PID_MinOutputX, PID_MaxOutputX;
+
+double PID_KpZ, PID_KiZ, PID_KdZ;
+double PID_IntegratedZ;
+double PID_Prev_InputZ;
+double PID_MinOutputZ, PID_MaxOutputZ;
+
 BOOL PID_First_Time;
-BOOL Running = FALSE;
-BOOL Go_State = FALSE;
+BOOL PID_First_TimeX;
+BOOL PID_First_TimeZ;
+//BOOL Running = FALSE;
+//BOOL RunningXZ = FALSE;
+//BOOL RunningY = FALSE;
+BOOL RunningMotor = FALSE;
+BOOL RunningServoPickUp = FALSE;
+BOOL RunningServoRotate = FALSE;
+//BOOL Go_State = FALSE;
 
 char DIR = 0;
+char DIRX = 0;
+char DIRZ = 0;
+char DIRY = 0;
 long set_position_x = 0;
-long set_position_y = 0;
 long set_position_z = 0;
+long set_position_y = 0;
+int sv1_angle = 0;
+int sv2_angle = 0;
 
+#define DELAY_WAIT_STABILITY 300
 
 int numByte;
-uint8_t dataArray[1];
+#define NUMBYTE 15
+uint8_t dataArray[15];
 
 #define PPSUnlock __builtin_write_OSCCONL(OSCCON & 0xBF)
 #define PPSLock __builtin_write_OSCCONL(OSCCON | 0x40)
 
-double t,Distance,AnPos;
+//double t,Distance,AnPos;
 
 #define INPUT_VOLTAGE 12.00
 #define PI 3.14
@@ -119,7 +147,21 @@ double t,Distance,AnPos;
 #define PPR 48.00
 #define TIME_SAMPLING 0.01
 
-#define SHAFT_MOTOR_RADIUS 4
+#define PULLEY_RADIUS 5
+
+//#define MOTOR_SPEED 35
+#define MOTOR_SPEEDX 40
+#define MOTOR_SPEEDZ 40
+
+#define STEP_PER_REVOLUTION 200
+unsigned int step_value = 0;
+
+uint8_t buff_val[15];
+//int index_buff_val = -1;
+//char buffID = 0;
+
+#define DELAY_SERVO1 1000
+#define DELAY_SERVO2 1000
 
 #endif	/* XC_HEADER_TEMPLATE_H */
 
