@@ -118,6 +118,7 @@ BOOL PID_First_TimeZ;
 BOOL RunningMotor = FALSE;
 BOOL RunningServoPickUp = FALSE;
 BOOL RunningServoRotate = FALSE;
+BOOL AllDone = TRUE;
 //BOOL Go_State = FALSE;
 
 char DIR = 0;
@@ -162,6 +163,10 @@ uint8_t buff_val[15];
 
 #define DELAY_SERVO1 1000
 #define DELAY_SERVO2 1000
+
+#define INT0 0x00
+#define INT1 0x01
+#define INT2 0x02
 
 #endif	/* XC_HEADER_TEMPLATE_H */
 

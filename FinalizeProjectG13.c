@@ -551,12 +551,8 @@ void ResetPulse()
 {
     POS1CNT = 0;
     POS2CNT = 0;
+    step_value = 0;
 }
-/*long step_pluse2mm()
-{
-    return 0;
-}*/
-
 void StepMotor(unsigned int __SetPoint) 
 {
     //_LATB13 = dir; //Changes the rotations direction
@@ -600,6 +596,7 @@ void StepMotorStop()
 }
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 {
+
     if(RunningMotor == TRUE)
     {
         if(set_position_x == abs(POS1CNT) && set_position_z == abs(POS2CNT) && set_position_y == step_value)
@@ -607,9 +604,6 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
             RunningMotor = FALSE;
             PWM1Stop(ALL2);
             StepMotorStop();
-            //UART1_Write(68); // 'D'
-            printf("All motor is done");
-            printf("\n");
         }
         else if(set_position_x != abs(POS1CNT) && set_position_z == abs(POS2CNT) && set_position_y == step_value)
         {
@@ -659,73 +653,35 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
             PWM1(M2, DIRZ, (int)PID_CalculateZ(set_position_z,abs(POS2CNT)));
             StepMotor(set_position_y);
         }
-        /*if(set_position_x == abs(POS1CNT) && set_position_y == abs(POS2CNT))
-        {
-            Running = FALSE;
-            PWM1Stop(ALL2);
-            PWM2Stop();
-            UART1_Write(68); // 'D'
-            //printf("\nDone.\n");
-        }
-        else if(set_position_x == abs(POS1CNT) && set_position_y != abs(POS2CNT))
-        {
-            Running = TRUE;
-            PWM1Stop(M1);
-            PWM1(M2, DIRY, (int)PID_CalculateY(set_position_y,abs(POS2CNT)));
-        }
-        else if(set_position_x != abs(POS1CNT) && set_position_y == abs(POS2CNT))
-        {
-            Running = TRUE;
-            PWM1Stop(M2);
-            PWM1(M1, !DIRX, (int)PID_CalculateX(set_position_x,abs(POS1CNT)));
-        }
-        else
-        {
-            Running = TRUE;
-            PWM1(M1, !DIRX, (int)PID_CalculateX(set_position_x,abs(POS1CNT)));
-            PWM1(M2, DIRY, (int)PID_CalculateY(set_position_y,abs(POS2CNT)));
-            //PWM2(!DIR, (int)PID_Calculate(set_position_z,???));
-        }*/
-        //AnPos = (2.0 * PI * abs(POS1CNT)) / PPR;
-        //Distance = PULLEY_RADIUS * AnPos;
-        //printf("Pulse = %6d, AnPos = %.2f, Distance = %.2f\n",abs(POS1CNT),AnPos,Distance);
     }  
     else
     {
         PWM1Stop(ALL2);
         PWM2Stop();
     }
+    
     if(RunningServoPickUp == TRUE)
     {
         servo_angle(SERVO1, sv1_angle);
         RunningServoPickUp = FALSE;
-        printf("Servo Pick Up is done");
-        printf("\n");
     }
+    
     if(RunningServoRotate == TRUE)
     {
         servo_angle(SERVO2, sv2_angle);
         RunningServoRotate = FALSE;
-        printf("Servo Rotate is done");
-        printf("\n");
     }
+    
+    if(RunningMotor == TRUE || RunningServoPickUp == TRUE || RunningServoRotate == TRUE)
+    {
+        _LATA4 = 1;
+    }
+    else
+    {
+        _LATA4 = 0;
+    }
+
     _T1IF = 0;
-}
-void __attribute__((interrupt, no_auto_psv)) _T4Interrupt(void)
-{
-    _T4IF = 0;
-}
-void __attribute__((interrupt, no_auto_psv)) _INT0Interrupt(void)
-{
-    _INT0IF = 0;
-}
-void __attribute__((interrupt, no_auto_psv)) _INT1Interrupt(void)
-{
-    _INT1IF = 0;
-}
-void __attribute__((interrupt, no_auto_psv)) _INT2Interrupt(void)
-{
-    _INT2IF = 0;
 }
 void Homing()
 {
@@ -782,8 +738,7 @@ int main(void)
     //INT0_PRIORITY(7);               // Set INT0 Interrupt Priority by 7
     //INT1_PRIORITY(6);               // Set INT1 Interrupt Priority by 6
     //INT2_PRIORITY(5);               // Set INT2 Interrupt Priority by 5
-    
-    // UART1 Initialize Communication at Baud Rate 115200 bps
+
     //_U1RXIP = 2;
     // Update Frequency of PWM1 and PWM2
     PWM1Freq(500);
@@ -797,15 +752,12 @@ int main(void)
     TIMER1_INT_PRIORITY(1);
     TIMER1_ON;
     
-    //TIMER4INT_ENABLE;
-    //TIMER4_INT_PRIORITY(2);
-    //TIMER4_ON;
-    
     _LATB15 = 0;
     Init_PIDX(1,0,0,-MOTOR_SPEEDX,MOTOR_SPEEDX); // Kp, Ki, Kd, MinDCPWM, MaxDCPWM
     Init_PIDZ(1,0,0,-MOTOR_SPEEDZ,MOTOR_SPEEDZ); // Kp, Ki, Kd, MinDCPWM, MaxDCPWM
     //Homing();
     initQEI(); // Initialize QEI1 and QEI2
+    // UART1 Initialize Communication at Baud Rate 115200 bps
     UART1_Initialize(86, 347);
     GLOBAL_INT_ENABLE;
     while(1)
@@ -813,17 +765,19 @@ int main(void)
         numByte = UART1_ReadBuffer(dataArray, NUMBYTE);
         __delay_ms(DELAY_WAIT_STABILITY);
         if (numByte > 0){
+            
             int i;//,j;
             for(i = 0; i < NUMBYTE; i++)
             {
                 buff_val[i] = 0;
             }
-            printf("Received Data(0x): ");
+            printf("Received Data(HEX): ");
             for (i = 0; i < numByte; i++){
-                printf("%4hX", (unsigned char)dataArray[i]);
+                printf("0x%2hX ", (unsigned char)dataArray[i]);
                 buff_val[i] = dataArray[i];
             }
             printf("\n");
+            
             if(buff_val[0] == 'F' && buff_val[1] == 'X' && buff_val[4] == 'Z' && buff_val[7] == 'Y' && buff_val[10] == 'P' && buff_val[12] == 'R' && buff_val[14] == 'S')
             {
 
@@ -835,6 +789,7 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = TRUE;
                 RunningServoRotate = TRUE;
+                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'X' && buff_val[4] == 'Z' && buff_val[7] == 'Y' && buff_val[10] == 'S')
             {
@@ -844,6 +799,7 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
+                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'X' && buff_val[4] == 'Z' && buff_val[7] == 'S')
             {
@@ -852,6 +808,7 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
+                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'P' && buff_val[3] == 'R' && buff_val[5] == 'S')
             {
@@ -860,6 +817,7 @@ int main(void)
                 RunningMotor = FALSE;
                 RunningServoPickUp = TRUE;
                 RunningServoRotate = TRUE;
+                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'Y' && buff_val[4] == 'S')
             {
@@ -867,6 +825,7 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
+                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'P' && buff_val[3] == 'S')
             {
@@ -874,6 +833,7 @@ int main(void)
                 RunningMotor = FALSE;
                 RunningServoPickUp = TRUE;
                 RunningServoRotate = FALSE;
+                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'R' && buff_val[3] == 'S')
             {
@@ -881,6 +841,21 @@ int main(void)
                 RunningMotor = FALSE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = TRUE;
+                AllDone == FALSE;
+            }
+            else if(buff_val[0] == 'F' && buff_val[1] == 'F' && buff_val[2] == 'S')
+            {
+                RunningMotor = FALSE;
+                RunningServoPickUp = FALSE;
+                RunningServoRotate = FALSE;
+                AllDone == TRUE;
+            }
+            else
+            {
+                RunningMotor = FALSE;
+                RunningServoPickUp = FALSE;
+                RunningServoRotate = FALSE;
+                AllDone == TRUE;
             }
         }
     }
