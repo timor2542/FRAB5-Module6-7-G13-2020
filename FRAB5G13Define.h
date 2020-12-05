@@ -94,10 +94,10 @@
 #define TRUE 1
 #define FALSE 0
 
-double PID_Kp, PID_Ki, PID_Kd;
-double PID_Integrated;
-double PID_Prev_Input;
-double PID_MinOutput, PID_MaxOutput;
+//double PID_Kp, PID_Ki, PID_Kd;
+//double PID_Integrated;
+//double PID_Prev_Input;
+//double PID_MinOutput, PID_MaxOutput;
 
 double PID_KpX, PID_KiX, PID_KdX;
 double PID_IntegratedX;
@@ -118,7 +118,7 @@ BOOL PID_First_TimeZ;
 BOOL RunningMotor = FALSE;
 BOOL RunningServoPickUp = FALSE;
 BOOL RunningServoRotate = FALSE;
-BOOL AllDone = TRUE;
+//BOOL AllDone = TRUE;
 //BOOL Go_State = FALSE;
 
 char DIR = 0;
@@ -128,8 +128,17 @@ char DIRY = 0;
 long set_position_x = 0;
 long set_position_z = 0;
 long set_position_y = 0;
+long velocity_x = 0;
+long velocity_z = 0;
+//long set_position_y = 0;
 int sv1_angle = 0;
 int sv2_angle = 0;
+
+
+double C0 = 0;
+double C2 = 0;
+double C3 = 0;
+
 
 #define DELAY_WAIT_STABILITY 300
 
@@ -151,10 +160,10 @@ uint8_t dataArray[15];
 #define PULLEY_RADIUS 5
 
 //#define MOTOR_SPEED 35
-#define MOTOR_SPEEDX 40
-#define MOTOR_SPEEDZ 40
+#define MOTOR_SPEEDX 45
+#define MOTOR_SPEEDZ 45
 
-#define STEP_PER_REVOLUTION 200
+#define STEP 1
 unsigned int step_value = 0;
 
 uint8_t buff_val[15];

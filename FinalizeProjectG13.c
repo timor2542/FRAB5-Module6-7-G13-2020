@@ -15,34 +15,17 @@
 #include "UART_rev3.h"
 #include "FRAB5G13Define.h"
 #include <libpic30.h>
-int lastValueW = 0;
-long MIN(long x,long y)
-{
-    return (x < y) ? x : y;
-}
-long MAX(long x,long y)
-{
-    return (x > y) ? x : y;
-}
 long map(long x, long in_min, long in_max, long out_min, long out_max) 
 {
  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-double mapf(double val, double in_min, double in_max, double out_min, double out_max) 
-{
-    return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
 long high_byte(long num)
 {
-    long value = value & 0xFFFF;
-    value = (num << 8) & 0xFF00;
-    return value;
+    return (num << 8) & 0xFF00;
 }
 long low_byte(long num)
 {
-    long value = value & 0xFFFF;
-    value = num & 0xFF;
-    return value;
+    return num & 0xFF;
 }
 void Reset_PIDX()
 {
@@ -92,7 +75,7 @@ double PID_CalculateX(double SetPointX, double InputValueX)
     // limit it to output minimum and maximum
     if (PID_IntegratedX < PID_MinOutputX) 
       PID_IntegratedX = PID_MinOutputX;
-    if (PID_Integrated > PID_MaxOutput)
+    if (PID_IntegratedX > PID_MaxOutputX)
       PID_IntegratedX = PID_MaxOutputX;
 
     // --- calculate derivative value ---
@@ -126,13 +109,13 @@ double PID_CalculateX(double SetPointX, double InputValueX)
         DIRX = 0;
     }
     
-    if(ResultX > -20 && ResultX < 0)
+    if(ResultX > -25 && ResultX < 0)
     {
-        ResultX = -20;
+        ResultX = -25;
     }
-    else if(ResultX > 0 && ResultX < 20)
+    else if(ResultX > 0 && ResultX < 25)
     {
-        ResultX = 20;
+        ResultX = 25;
     }
     
     return (abs(ResultX));
@@ -151,7 +134,7 @@ double PID_CalculateZ(double SetPointZ, double InputValueZ)
     // limit it to output minimum and maximum
     if (PID_IntegratedZ < PID_MinOutputZ) 
       PID_IntegratedZ = PID_MinOutputZ;
-    if (PID_Integrated > PID_MaxOutput)
+    if (PID_IntegratedZ > PID_MaxOutputZ)
       PID_IntegratedZ = PID_MaxOutputZ;
 
     // --- calculate derivative value ---
@@ -185,13 +168,13 @@ double PID_CalculateZ(double SetPointZ, double InputValueZ)
         DIRZ = 0;
     }
     
-    if(ResultZ > -20 && ResultZ < 0)
+    if(ResultZ > -25 && ResultZ < 0)
     {
-        ResultZ = -20;
+        ResultZ = -25;
     }
-    else if(ResultZ > 0 && ResultZ < 20)
+    else if(ResultZ > 0 && ResultZ < 25)
     {
-        ResultZ = 20;
+        ResultZ = 25;
     }
     
     return (abs(ResultZ));
@@ -202,7 +185,7 @@ void setADIO(unsigned int __byte1,unsigned int __byte2,unsigned int __byte3)// S
     TRISA = __byte2;
     TRISB = __byte3;
 }
-void XINT(char __selectINT, char __selectRP) // External Mapping Function
+/*void XINT(char __selectINT, char __selectRP) // External Mapping Function
 {
     OSCCON = 0x46;
     OSCCON = 0x57;
@@ -220,7 +203,7 @@ void XINT(char __selectINT, char __selectRP) // External Mapping Function
     OSCCON = 0x46;
     OSCCON = 0x57;
     OSCCONbits.IOLOCK = 1;
-}
+}*/
 void initPWM()
 {
      //setup PWM ports
@@ -316,10 +299,10 @@ void initQEI()
     
     RPINR18bits.U1RXR = 6;                  // Set UART1 RX to MCU pin
     RPOR2bits.RP5R = 0b00011;               // Set UART1 TX from MCU pin
-    RPINR14bits.QEA1R = 2;          // Remap __chQEI1A connect to QEI1_A
-    RPINR14bits.QEB1R = 3;          // Remap __chQEI1B connect to QEI1_B
-    RPINR16bits.QEA2R = 0;          // Remap __chQEI2A connect to QEI2_A
-    RPINR16bits.QEB2R = 1;          // Remap __chQEI2B connect to QEI2_B
+    RPINR14bits.QEA1R = 3;          // Remap __chQEI1A connect to QEI1_A
+    RPINR14bits.QEB1R = 2;          // Remap __chQEI1B connect to QEI1_B
+    RPINR16bits.QEA2R = 1;          // Remap __chQEI2A connect to QEI2_A
+    RPINR16bits.QEB2R = 0;          // Remap __chQEI2B connect to QEI2_B
     
     __builtin_write_OSCCONL(OSCCON | 0x40); //  PPS RECONFIG LOCK 
     
@@ -426,6 +409,12 @@ void initTimer1() //Timer1
     TIMER1_PRESCALE(0b10); //set timer prescaler to 1:64
     PR1 = 6250;
 }
+void initTimer4() //Timer1
+{
+    TIMER4_OFF;
+    TIMER4_PRESCALE(0b10); //set timer prescaler to 1:64
+    PR4 = 6250;
+}
 void initOCServo() // Timer23
 {
     TIMER2_OFF;
@@ -460,7 +449,7 @@ void servo_angle(char ch, signed int angle) //set velocity
         }
         else if(angle >= 0 && angle <= 180)
         {
-            long value = map(angle,0,180,315,1560); // Angle 0-180 = OCxRS 315-1560
+            long value = map(angle,0,180,313,1562); // Angle 0-180 = OCxRS 313-1562
             OC1RS = value;
         }
     }
@@ -473,7 +462,7 @@ void servo_angle(char ch, signed int angle) //set velocity
         }
         else if(angle >= 0 && angle <= 180)
         {
-            long value = map(angle,0,180,315,1560); // Angle 0-180 = OCxRS 315-1560
+            long value = map(angle,0,180,313,1562); // Angle 0-180 = OCxRS 313-1562
             OC2RS = value;
         }
     }
@@ -486,7 +475,7 @@ void servo_angle(char ch, signed int angle) //set velocity
         }
         else if(angle >= 0 && angle <= 180)
         {
-            long value = map(angle,0,180,315,1560); // Angle 0-180 = OCxRS 315-1560
+            long value = map(angle,0,180,313,1562); // Angle 0-180 = OCxRS 313-1562
             OC1RS = value;
             OC2RS = value;
         }
@@ -533,11 +522,11 @@ void updatePositionXZ(long _posx, long _posz)
     set_position_x = _posx;
     set_position_z = _posz;
 }
-void updatePositionXYZ(long _posx, long _posy, long _posz)
+void updatePositionXZY(long _posx, long _posz, long _posy)
 {
     set_position_x = _posx;
-    set_position_y = _posy;
     set_position_z = _posz;
+    set_position_y = _posy;
 }
 void updateAngleServoPickUp(int _angle)
 {
@@ -556,6 +545,7 @@ void ResetPulse()
 void StepMotor(unsigned int __SetPoint) 
 {
     //_LATB13 = dir; //Changes the rotations direction
+    _LATB15 = 0;
     if(__SetPoint < 0)
     {
         __SetPoint = 0;
@@ -573,12 +563,12 @@ void StepMotor(unsigned int __SetPoint)
     
     int x;
     // Makes N pulses for making one full cycle rotation
-    for (x = 0; x < STEP_PER_REVOLUTION; x++) {
+    for (x = 0; x < STEP; x++) {
 
         _LATB8 = 1;
-        __delay_us(500);
+        __delay_us(1000);
         _LATB8 = 0;
-        __delay_us(500);
+        __delay_us(1000);
     }
     
     if(DIRZ == 0)
@@ -592,11 +582,26 @@ void StepMotor(unsigned int __SetPoint)
 }
 void StepMotorStop()
 {
+    _LATB15 = 1;
     _LATB8 = 0;
 }
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 {
-
+    
+    _T1IF = 0;
+}
+void __attribute__((interrupt, no_auto_psv)) _T4Interrupt(void)
+{
+    
+    if(RunningMotor == TRUE || RunningServoPickUp == TRUE || RunningServoRotate == TRUE)
+    {
+        _LATA4 = 1;
+    }
+    else
+    {
+        _LATA4 = 0;
+    }
+    
     if(RunningMotor == TRUE)
     {
         if(set_position_x == abs(POS1CNT) && set_position_z == abs(POS2CNT) && set_position_y == step_value)
@@ -610,7 +615,7 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
             RunningMotor = TRUE;
             PWM1Stop(M2);
             StepMotorStop();
-            PWM1(M1, !DIRX, (int)PID_CalculateX(set_position_x,abs(POS1CNT)));
+            PWM1(M1, DIRX, (int)PID_CalculateX(set_position_x,abs(POS1CNT)));
         }
         else if(set_position_x == abs(POS1CNT) && set_position_z != abs(POS2CNT) && set_position_y == step_value)
         {
@@ -629,14 +634,14 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
         {
             RunningMotor = TRUE;
             StepMotorStop();
-            PWM1(M1, !DIRX, (int)PID_CalculateX(set_position_x,abs(POS1CNT)));
+            PWM1(M1, DIRX, (int)PID_CalculateX(set_position_x,abs(POS1CNT)));
             PWM1(M2, DIRZ, (int)PID_CalculateZ(set_position_z,abs(POS2CNT)));
         }
         else if(set_position_x != abs(POS1CNT) && set_position_z == abs(POS2CNT) && set_position_y != step_value)
         {
             RunningMotor = TRUE;
             PWM1Stop(M2);
-            PWM1(M1, !DIRX, (int)PID_CalculateX(set_position_x,abs(POS1CNT)));
+            PWM1(M1, DIRX, (int)PID_CalculateX(set_position_x,abs(POS1CNT)));
             StepMotor(set_position_y);
         }
         else if(set_position_x == abs(POS1CNT) && set_position_z != abs(POS2CNT) && set_position_y != step_value)
@@ -646,10 +651,10 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
             PWM1(M2, DIRZ, (int)PID_CalculateZ(set_position_z,abs(POS2CNT)));
             StepMotor(set_position_y);
         }
-        else
+        else if(set_position_x != abs(POS1CNT) && set_position_z != abs(POS2CNT) && set_position_y != step_value)
         {
             RunningMotor = TRUE;
-            PWM1(M1, !DIRX, (int)PID_CalculateX(set_position_x,abs(POS1CNT)));
+            PWM1(M1, DIRX, (int)PID_CalculateX(set_position_x,abs(POS1CNT)));
             PWM1(M2, DIRZ, (int)PID_CalculateZ(set_position_z,abs(POS2CNT)));
             StepMotor(set_position_y);
         }
@@ -671,41 +676,31 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
         servo_angle(SERVO2, sv2_angle);
         RunningServoRotate = FALSE;
     }
-    
-    if(RunningMotor == TRUE || RunningServoPickUp == TRUE || RunningServoRotate == TRUE)
-    {
-        _LATA4 = 1;
-    }
-    else
-    {
-        _LATA4 = 0;
-    }
-
-    _T1IF = 0;
+    _T4IF = 0;
 }
 void Homing()
 {
     PWM2CON1bits.PEN1H = 1;                                //  PWM2H1 PWM OUTPUT
     PWM2_ENABLE;
-    while(_RB7 == 0)
-    {
-        PWM1(M1, !BACKWARD, 100);
-    }
-    PWM1Stop(M1);
-    __delay_ms(300);
     while(_RB4 == 0)
     {
-        PWM1(M2, BACKWARD, 100);
-    }
-    PWM1Stop(M2);
-    __delay_ms(300);
-    while(_RB11 == 0)
-    {
-        PWM2(BACKWARD, 30);
+        PWM2(BACKWARD, 50);
     }
     PWM2Stop();
     PWM2_DISABLE;
-    PWM2CON1bits.PEN1H = 0;                                //  PWM2H1 PWM OUTPUT
+    PWM2CON1bits.PEN1H = 0;
+    __delay_ms(300);
+    while(_RB7 == 0)
+    {
+        PWM1(M1, BACKWARD, 50);
+    }
+    PWM1Stop(M1);
+    __delay_ms(300);
+    while(_RB11 == 0)
+    {
+        PWM1(M2, BACKWARD, 50);
+    }
+    PWM1Stop(M2);
     ResetPulse();
     __delay_ms(1000);
 }
@@ -722,13 +717,14 @@ int main(void)
     
     // Initialize
     initPLL();  // Initialize PLL at FCY = 40 MHz
-    initTimer1(); // Initialize Timer1;
+    initTimer1();
+    initTimer4(); // Initialize Timer4;
     initPWM();  // Initialize PWM
     initADC();  // Initialize ADC
     
     // External Interrupt Configuration
-    XINT(1,4);     // Remap External INT1 on RP4
-    XINT(2,10);     // Remap External INT2 on RP10
+    //XINT(1,4);     // Remap External INT1 on RP4
+    //XINT(2,10);     // Remap External INT2 on RP10
     initOCServo();
 
     // Enable External Interrupt
@@ -743,19 +739,19 @@ int main(void)
     // Update Frequency of PWM1 and PWM2
     PWM1Freq(500);
     PWM1_ENABLE;
-    PWM2Freq(2000);
+    PWM2Freq(500);
     
     TIMER2_ON;
     TIMER3_ON;
     // Enable Global Interrupt
-    TIMER1INT_ENABLE;
-    TIMER1_INT_PRIORITY(1);
-    TIMER1_ON;
+    TIMER4INT_ENABLE;
+    TIMER4_INT_PRIORITY(1);
+    TIMER4_ON;
     
     _LATB15 = 0;
     Init_PIDX(1,0,0,-MOTOR_SPEEDX,MOTOR_SPEEDX); // Kp, Ki, Kd, MinDCPWM, MaxDCPWM
     Init_PIDZ(1,0,0,-MOTOR_SPEEDZ,MOTOR_SPEEDZ); // Kp, Ki, Kd, MinDCPWM, MaxDCPWM
-    //Homing();
+    Homing();
     initQEI(); // Initialize QEI1 and QEI2
     // UART1 Initialize Communication at Baud Rate 115200 bps
     UART1_Initialize(86, 347);
@@ -789,7 +785,6 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = TRUE;
                 RunningServoRotate = TRUE;
-                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'X' && buff_val[4] == 'Z' && buff_val[7] == 'Y' && buff_val[10] == 'S')
             {
@@ -799,7 +794,6 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
-                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'X' && buff_val[4] == 'Z' && buff_val[7] == 'S')
             {
@@ -808,7 +802,6 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
-                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'P' && buff_val[3] == 'R' && buff_val[5] == 'S')
             {
@@ -817,7 +810,6 @@ int main(void)
                 RunningMotor = FALSE;
                 RunningServoPickUp = TRUE;
                 RunningServoRotate = TRUE;
-                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'Y' && buff_val[4] == 'S')
             {
@@ -825,7 +817,6 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
-                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'P' && buff_val[3] == 'S')
             {
@@ -833,7 +824,6 @@ int main(void)
                 RunningMotor = FALSE;
                 RunningServoPickUp = TRUE;
                 RunningServoRotate = FALSE;
-                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'R' && buff_val[3] == 'S')
             {
@@ -841,21 +831,18 @@ int main(void)
                 RunningMotor = FALSE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = TRUE;
-                AllDone == FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'F' && buff_val[2] == 'S')
             {
                 RunningMotor = FALSE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
-                AllDone == TRUE;
             }
             else
             {
                 RunningMotor = FALSE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
-                AllDone == TRUE;
             }
         }
     }

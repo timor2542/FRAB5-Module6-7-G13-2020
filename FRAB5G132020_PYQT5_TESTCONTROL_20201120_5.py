@@ -10,8 +10,6 @@
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 import serial
-import time
-import binascii
 
 
 def high_byte(_num):
@@ -252,7 +250,7 @@ class Ui_MainWindow(object):
         self.pushButton.setText(_translate("MainWindow", "Connect"))
         self.pushButton_2.setText(_translate("MainWindow", "Send Data to dsPIC33FJ64MC802"))
         self.label_9.setText(_translate("MainWindow", "COMMAND"))
-        self.label_10.setText(_translate("MainWindow", "Rev.20201121 12:00 PM FRAB#5 GROUP 13 MODULE 6-7 2020"))
+        self.label_10.setText(_translate("MainWindow", "Rev.20201124 11:48 AM FRAB#5 GROUP 13 MODULE 6-7 2020"))
         self.plainTextEdit.setPlaceholderText(_translate("MainWindow", "COM?"))
         self.pushButton_3.setText(_translate("MainWindow", "Disconnect"))
         self.pushButton_4.setText(_translate("MainWindow", "Set Home"))
@@ -355,7 +353,7 @@ class Ui_MainWindow(object):
             else:
                 print("Warning: Serial Port", self.COM_PORT, "is not opened.")
         elif self.radioButton_2.isChecked():
-            data = serial.to_bytes([0x46, 0x5A, high_byte(self.posy), low_byte(self.posy), 0x53])
+            data = serial.to_bytes([0x46, 0x59, high_byte(self.posy), low_byte(self.posy), 0x53])
             print("Y:", self.posy)
             print("Passcode: ", data)
             if self.port_connected:
