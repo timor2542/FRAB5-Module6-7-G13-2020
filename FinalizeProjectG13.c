@@ -109,13 +109,13 @@ double PID_CalculateX(double SetPointX, double InputValueX)
         DIRX = 0;
     }
     
-    if(ResultX > -25 && ResultX < 0)
+    if(ResultX > -SET_MIN_SPEEDX && ResultX < 0)
     {
-        ResultX = -25;
+        ResultX = -SET_MIN_SPEEDX;
     }
-    else if(ResultX > 0 && ResultX < 25)
+    else if(ResultX > 0 && ResultX < SET_MIN_SPEEDX)
     {
-        ResultX = 25;
+        ResultX = SET_MIN_SPEEDX;
     }
     
     return (abs(ResultX));
@@ -168,13 +168,13 @@ double PID_CalculateZ(double SetPointZ, double InputValueZ)
         DIRZ = 0;
     }
     
-    if(ResultZ > -25 && ResultZ < 0)
+    if(ResultZ > -SET_MIN_SPEEDZ && ResultZ < 0)
     {
-        ResultZ = -25;
+        ResultZ = -SET_MIN_SPEEDZ;
     }
-    else if(ResultZ > 0 && ResultZ < 25)
+    else if(ResultZ > 0 && ResultZ < SET_MIN_SPEEDZ)
     {
-        ResultZ = 25;
+        ResultZ = SET_MIN_SPEEDZ;
     }
     
     return (abs(ResultZ));
@@ -413,7 +413,8 @@ void initTimer4() //Timer1
 {
     TIMER4_OFF;
     TIMER4_PRESCALE(0b10); //set timer prescaler to 1:64
-    PR4 = 6250;
+    //PR4 = 6250;
+    PR4 = 625;
 }
 void initOCServo() // Timer23
 {
@@ -563,12 +564,12 @@ void StepMotor(unsigned int __SetPoint)
     
     int x;
     // Makes N pulses for making one full cycle rotation
-    for (x = 0; x < STEP; x++) {
+    for (x = 0; x < PULSE; x++) {
 
         _LATB8 = 1;
-        __delay_us(1000);
+        __delay_us(DELAY_STEP_MOTOR);
         _LATB8 = 0;
-        __delay_us(1000);
+        __delay_us(DELAY_STEP_MOTOR);
     }
     
     if(DIRZ == 0)
@@ -582,13 +583,8 @@ void StepMotor(unsigned int __SetPoint)
 }
 void StepMotorStop()
 {
-    _LATB15 = 1;
+    //_LATB15 = 1;
     _LATB8 = 0;
-}
-void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
-{
-    
-    _T1IF = 0;
 }
 void __attribute__((interrupt, no_auto_psv)) _T4Interrupt(void)
 {
@@ -609,6 +605,19 @@ void __attribute__((interrupt, no_auto_psv)) _T4Interrupt(void)
             RunningMotor = FALSE;
             PWM1Stop(ALL2);
             StepMotorStop();
+            /*if (step_value <= 0) {
+                PWM2CON1bits.PEN1H = 1; //  PWM2H1 PWM OUTPUT
+                PWM2_ENABLE;
+                while (_RB4 == 0) {
+                    PWM2(BACKWARD, 50);
+                }
+                PWM2Stop();
+                PWM2_DISABLE;
+                PWM2CON1bits.PEN1H = 0;
+                _LATB15 = 1;
+            } else {
+                _LATB15 = 0;
+            }*/
         }
         else if(set_position_x != abs(POS1CNT) && set_position_z == abs(POS2CNT) && set_position_y == step_value)
         {
@@ -692,13 +701,13 @@ void Homing()
     __delay_ms(300);
     while(_RB7 == 0)
     {
-        PWM1(M1, BACKWARD, 50);
+        PWM1(M1, BACKWARD, 60);
     }
     PWM1Stop(M1);
     __delay_ms(300);
     while(_RB11 == 0)
     {
-        PWM1(M2, BACKWARD, 50);
+        PWM1(M2, BACKWARD, 60);
     }
     PWM1Stop(M2);
     ResetPulse();
@@ -739,7 +748,7 @@ int main(void)
     // Update Frequency of PWM1 and PWM2
     PWM1Freq(500);
     PWM1_ENABLE;
-    PWM2Freq(500);
+    PWM2Freq(2000);
     
     TIMER2_ON;
     TIMER3_ON;
@@ -752,6 +761,7 @@ int main(void)
     Init_PIDX(1,0,0,-MOTOR_SPEEDX,MOTOR_SPEEDX); // Kp, Ki, Kd, MinDCPWM, MaxDCPWM
     Init_PIDZ(1,0,0,-MOTOR_SPEEDZ,MOTOR_SPEEDZ); // Kp, Ki, Kd, MinDCPWM, MaxDCPWM
     Homing();
+    //_LATB15 = 1;
     initQEI(); // Initialize QEI1 and QEI2
     // UART1 Initialize Communication at Baud Rate 115200 bps
     UART1_Initialize(86, 347);
