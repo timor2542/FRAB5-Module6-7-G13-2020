@@ -16,7 +16,9 @@ import serial
 import time
 
 from Image import Image
-from Image_Preparation import Calibration,BG_subtractor
+from Image_Preparation import Calibration, BG_subtractor
+
+camera_index = 0
 
 def high_byte(_num):
     return int((int(_num) >> 8) & 0xFF)
@@ -26,14 +28,13 @@ def low_byte(_num):
     return int(int(_num) & 0xFF)
 
 
-
 class Ui_MainWindow(object):
 
-    def __init__(self,camera_index):
+    def __init__(self, camera_index):
         self.ser = serial.Serial()
         self.COM_PORT = ""
         self.COM_PORT_TXT = ""
-        
+
         self.posx = 0
         self.posz = 0
         self.posy = 0
@@ -484,44 +485,44 @@ class Ui_MainWindow(object):
             print(self.ser.readline().decode())
         else:
             print("Warning: Serial Port", self.COM_PORT, "is not opened.")
-        
-        while(1):
-            ret,img = self.camera.cap.read()
+        #print(self.camera.cap.isOpened())
+        while (1):
+            ret, img = self.camera.cap.read()
+            print(ret)
             if ret:
-                aruco_ret,field_img,aruco_img = self.field.cropWith_aruco(img,True)  # Find ARUCO
-                if aruco_ret :
-                    cv2.imshow("Crop Image",field_img)
-                if aruco_img is not None :
-                    cv2.imshow("ARUCO",aruco_img)
-                cv2.imshow("Image",img)
-            key = cv2.waitKey(30)    
+                aruco_ret, field_img, aruco_img = self.field.cropWith_aruco(img, True)  # Find ARUCO
+                if aruco_ret:
+                    cv2.imshow("Crop Image", field_img)
+                if aruco_img is not None:
+                    cv2.imshow("ARUCO", aruco_img)
+                cv2.imshow("Image", img)
+            key = cv2.waitKey(30)
             if key == ord('q') or ret is False:
                 cv2.destroyWindow("Image")
                 cv2.destroyWindow("Crop Image")
                 cv2.destroyWindow("ARUCO")
                 break
-    def sampling_cmd(self): # Edit this.
+
+    def sampling_cmd(self):  # Edit this.
         count = 0
         num_sample = 26
         period = 2
-        while(1):
-            ret,img = self.camera.cap.read()
-            #print(count)
-            if ret :       # Sampling
-                cv2.imshow("Image",img)
+        while (1):
+            ret, img = self.camera.cap.read()
+            # print(count)
+            if ret:  # Sampling
+                cv2.imshow("Image", img)
                 if self.field.Height is not None:
                     self.field.add_imgset(img)
-            if count== num_sample:
+            if count == num_sample:
                 break
             time.sleep(period)
-            count+= 1
-        if len(self.field.imgset) != 0 :
+            count += 1
+        if len(self.field.imgset) != 0:
             self.camera.update_img(self.field.median2getBG())
-            cv2.imshow("Result",self.camera.image)
-        else :
+            cv2.imshow("Result", self.camera.image)
+        else:
             print("Error : Not find the image")
-
-camera_index = 0
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
