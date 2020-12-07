@@ -1,11 +1,11 @@
 /*
- * Program      :   Module 6-7 Milestone 3
+ * Program      :   Module 6-7 Demo I and Demo II
  * Description  :   Generate PWM signal drive DC motor by Cytron MDD10A Rev. 2.0
  * Frequency    :   8 MHz at PLL
  * Filename     :   FinalizeProjectG13.c
  * C Compiler   :   XC16 Complier by Microship Technology
  * Author       :   Mr.Krittamet Thawong and Mr.Wisaruth Kasemphumirat KMUTT FIBO FRAB#5
- * Update       :   7 November 2020 10:08 AM UTC+7 Bangkok
+ * Update       :   7 December 2020 10:08 AM UTC+7 Bangkok
  * Test Port
  */
 #include "math.h" 
