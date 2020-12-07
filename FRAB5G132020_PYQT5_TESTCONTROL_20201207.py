@@ -52,7 +52,8 @@ class Ui_MainWindow(object):
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1355, 679)
+        #MainWindow.resize(1355, 679)
+        MainWindow.setFixedSize(1355, 679)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         font = QtGui.QFont()
         font.setPointSize(10)
