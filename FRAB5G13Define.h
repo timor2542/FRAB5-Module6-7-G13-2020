@@ -160,10 +160,10 @@ uint8_t dataArray[15];
 #define PULLEY_RADIUS 5
 
 //#define MOTOR_SPEED 35
-#define MOTOR_SPEEDX 35
-#define MOTOR_SPEEDZ 35
-#define SET_MIN_SPEEDX 30
-#define SET_MIN_SPEEDZ 30
+#define MOTOR_SPEEDX 45
+#define MOTOR_SPEEDZ 45
+#define SET_MIN_SPEEDX 35
+#define SET_MIN_SPEEDZ 35
 
 #define PULSE 200
 #define DELAY_STEP_MOTOR 1000

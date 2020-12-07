@@ -605,19 +605,6 @@ void __attribute__((interrupt, no_auto_psv)) _T4Interrupt(void)
             RunningMotor = FALSE;
             PWM1Stop(ALL2);
             StepMotorStop();
-            /*if (step_value <= 0) {
-                PWM2CON1bits.PEN1H = 1; //  PWM2H1 PWM OUTPUT
-                PWM2_ENABLE;
-                while (_RB4 == 0) {
-                    PWM2(BACKWARD, 50);
-                }
-                PWM2Stop();
-                PWM2_DISABLE;
-                PWM2CON1bits.PEN1H = 0;
-                _LATB15 = 1;
-            } else {
-                _LATB15 = 0;
-            }*/
         }
         else if(set_position_x != abs(POS1CNT) && set_position_z == abs(POS2CNT) && set_position_y == step_value)
         {
