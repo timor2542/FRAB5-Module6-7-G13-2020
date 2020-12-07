@@ -10,9 +10,15 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QPixmap
-
+import cv2
 import sys
 import serial
+import time
+
+sys.path.append("C:/Users/wisar/Documents/ProjectModule7/IMG_processing_4PJM7/IMG_code")
+
+from Image import Image
+from Preparation import Calibration,BG_subtractor
 
 def high_byte(_num):
     return int((int(_num) >> 8) & 0xFF)
@@ -21,13 +27,15 @@ def high_byte(_num):
 def low_byte(_num):
     return int(int(_num) & 0xFF)
 
+
+
 class Ui_MainWindow(object):
 
-    def __init__(self):
+    def __init__(self,camera_index):
         self.ser = serial.Serial()
         self.COM_PORT = ""
         self.COM_PORT_TXT = ""
-
+        
         self.posx = 0
         self.posz = 0
         self.posy = 0
@@ -39,6 +47,9 @@ class Ui_MainWindow(object):
         # self.ID = 0
         self.port_connected = False
         # self.send_mode = ''
+        self.camera = Image(camera_index)
+        self.camera.setting()
+        self.field = BG_subtractor()
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -475,14 +486,49 @@ class Ui_MainWindow(object):
             print(self.ser.readline().decode())
         else:
             print("Warning: Serial Port", self.COM_PORT, "is not opened.")
+        
+        while(1):
+            ret,img = self.camera.cap.read()
+            if ret:
+                aruco_ret,field_img,aruco_img = self.field.cropWith_aruco(img,True)  # Find ARUCO
+                if aruco_ret :
+                    cv2.imshow("Crop Image",field_img)
+                if aruco_img is not None :
+                    cv2.imshow("ARUCO",aruco_img)
+                cv2.imshow("Image",img)
+            key = cv2.waitKey(30)    
+            if key == ord('q') or ret is False:
+                cv2.destroyWindow("Image")
+                cv2.destroyWindow("Crop Image")
+                cv2.destroyWindow("ARUCO")
+                break
     def sampling_cmd(self): # Edit this.
-        pass
+        count = 0
+        num_sample = 26
+        period = 2
+        while(1):
+            ret,img = self.camera.cap.read()
+            #print(count)
+            if ret :       # Sampling
+                cv2.imshow("Image",img)
+                if self.field.Height is not None:
+                    self.field.add_imgset(img)
+            if count== num_sample:
+                break
+            time.sleep(period)
+            count+= 1
+        if len(self.field.imgset) != 0 :
+            self.camera.update_img(self.field.median2getBG())
+            cv2.imshow("Result",self.camera.image)
+        else :
+            print("Error : Not find the image")
 
+camera_index = 0
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
+    ui = Ui_MainWindow(camera_index)
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
