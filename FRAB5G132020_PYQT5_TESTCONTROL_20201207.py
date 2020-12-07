@@ -15,10 +15,8 @@ import sys
 import serial
 import time
 
-sys.path.append("C:/Users/wisar/Documents/ProjectModule7/IMG_processing_4PJM7/IMG_code")
-
 from Image import Image
-from Preparation import Calibration,BG_subtractor
+from Image_Preparation import Calibration,BG_subtractor
 
 def high_byte(_num):
     return int((int(_num) >> 8) & 0xFF)
