@@ -7,6 +7,7 @@ class Image :
 #  
     def __init__(self,camera_index):
         self.cap = cv2.VideoCapture(camera_index+cv2.CAP_DSHOW)
+        #self.cap = cv2.VideoCapture(camera_index)
         self.image = []
         self.bin_image = None
     
