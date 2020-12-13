@@ -595,6 +595,11 @@ void __attribute__((interrupt, no_auto_psv)) _T4Interrupt(void)
     }
     else
     {
+        if(AllDone == FALSE)
+        {
+            printf("Done\n");
+            AllDone = TRUE;
+        }
         _LATA4 = 0;
     }
     
@@ -658,7 +663,7 @@ void __attribute__((interrupt, no_auto_psv)) _T4Interrupt(void)
     else
     {
         PWM1Stop(ALL2);
-        PWM2Stop();
+        StepMotorStop();
     }
     
     if(RunningServoPickUp == TRUE)
@@ -672,10 +677,13 @@ void __attribute__((interrupt, no_auto_psv)) _T4Interrupt(void)
         servo_angle(SERVO2, sv2_angle);
         RunningServoRotate = FALSE;
     }
+    
     _T4IF = 0;
 }
 void Homing()
 {
+    servo_angle(SERVO1, 0);
+    servo_angle(SERVO2, 135);
     PWM2CON1bits.PEN1H = 1;                                //  PWM2H1 PWM OUTPUT
     PWM2_ENABLE;
     while(_RB4 == 0)
@@ -688,13 +696,13 @@ void Homing()
     __delay_ms(300);
     while(_RB7 == 0)
     {
-        PWM1(M1, BACKWARD, 60);
+        PWM1(M1, BACKWARD, 50);
     }
     PWM1Stop(M1);
     __delay_ms(300);
     while(_RB11 == 0)
     {
-        PWM1(M2, BACKWARD, 60);
+        PWM1(M2, BACKWARD, 50);
     }
     PWM1Stop(M2);
     ResetPulse();
@@ -764,12 +772,11 @@ int main(void)
             {
                 buff_val[i] = 0;
             }
-            printf("Received Data(HEX): ");
+            //printf("Received Data(HEX): ");
             for (i = 0; i < numByte; i++){
-                printf("0x%2hX ", (unsigned char)dataArray[i]);
+                //printf("0x%2hX ", (unsigned char)dataArray[i]);
                 buff_val[i] = dataArray[i];
             }
-            printf("\n");
             
             if(buff_val[0] == 'F' && buff_val[1] == 'X' && buff_val[4] == 'Z' && buff_val[7] == 'Y' && buff_val[10] == 'P' && buff_val[12] == 'R' && buff_val[14] == 'S')
             {
@@ -782,6 +789,7 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = TRUE;
                 RunningServoRotate = TRUE;
+                AllDone = FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'X' && buff_val[4] == 'Z' && buff_val[7] == 'Y' && buff_val[10] == 'S')
             {
@@ -791,6 +799,7 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
+                AllDone = FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'X' && buff_val[4] == 'Z' && buff_val[7] == 'S')
             {
@@ -799,6 +808,7 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
+                AllDone = FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'P' && buff_val[3] == 'R' && buff_val[5] == 'S')
             {
@@ -807,6 +817,7 @@ int main(void)
                 RunningMotor = FALSE;
                 RunningServoPickUp = TRUE;
                 RunningServoRotate = TRUE;
+                AllDone = FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'Y' && buff_val[4] == 'S')
             {
@@ -814,6 +825,7 @@ int main(void)
                 RunningMotor = TRUE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
+                AllDone = FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'P' && buff_val[3] == 'S')
             {
@@ -821,6 +833,7 @@ int main(void)
                 RunningMotor = FALSE;
                 RunningServoPickUp = TRUE;
                 RunningServoRotate = FALSE;
+                AllDone = FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'R' && buff_val[3] == 'S')
             {
@@ -828,18 +841,23 @@ int main(void)
                 RunningMotor = FALSE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = TRUE;
+                AllDone = FALSE;
             }
             else if(buff_val[0] == 'F' && buff_val[1] == 'F' && buff_val[2] == 'S')
             {
                 RunningMotor = FALSE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
+                AllDone = TRUE;
+                printf("Done\n");
             }
             else
             {
                 RunningMotor = FALSE;
                 RunningServoPickUp = FALSE;
                 RunningServoRotate = FALSE;
+                AllDone = TRUE;
+                printf("Done\n");
             }
         }
     }

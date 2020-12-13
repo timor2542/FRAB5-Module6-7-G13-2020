@@ -61,7 +61,7 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalSlider = QtWidgets.QSlider(self.centralwidget)
         self.horizontalSlider.setGeometry(QtCore.QRect(50, 150, 1151, 22))
-        self.horizontalSlider.setMaximum(1300)
+        self.horizontalSlider.setMaximum(1340)
         self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider.setObjectName("horizontalSlider")
         self.horizontalSlider.valueChanged[int].connect(self.updateposx)
@@ -330,7 +330,7 @@ class Ui_MainWindow(object):
         print("Z:", self.posz)
 
     def updateposy(self, value):
-        self.posy = int(value)
+        self.posy = int(value)  
         print("Y:", self.posy)
 
     def updatesvp(self, value):
