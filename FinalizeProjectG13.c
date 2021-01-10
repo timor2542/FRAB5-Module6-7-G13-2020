@@ -693,20 +693,21 @@ void Homing()
     PWM2Stop();
     PWM2_DISABLE;
     PWM2CON1bits.PEN1H = 0;
-    __delay_ms(300);
+    __delay_ms(500);
+    StepMotorStop();
     while(_RB7 == 0)
     {
         PWM1(M1, BACKWARD, 50);
     }
     PWM1Stop(M1);
-    __delay_ms(300);
+    __delay_ms(500);
     while(_RB11 == 0)
     {
         PWM1(M2, BACKWARD, 50);
     }
     PWM1Stop(M2);
     ResetPulse();
-    __delay_ms(1000);
+    __delay_ms(2000);
 }
 int main(void) 
 {
